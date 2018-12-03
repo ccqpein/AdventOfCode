@@ -44,13 +44,14 @@
 		(tuple-of-2and3 (list nil nil)))
 	(loop
 	   for c across str
-	   for (a b) = (multiple-value-bind (a b) (gethash c table) (list a b))
+	   ;;return multiple 
+	   for (a b) = (multiple-value-list (gethash c table))
 	   do (if (not b)
 			  (setf (gethash c table) 1)
 			  (setf (gethash c table) (+ 1 (gethash c table)))))
 	
 	(loop
-	   for k being each hash-key in table
+	   for k being the hash-key in table
 	   using (hash-value v)
 	   do (cond ((= v 2)
 				 (setf (car tuple-of-2and3) t))
