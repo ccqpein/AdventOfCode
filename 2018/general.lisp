@@ -13,3 +13,7 @@
 		((not this-char)
 		 cache)
 	  (setf cache (append cache (list this-char))))))
+
+(defun read-coordinate (str)
+  "str = \"aaa, bbb\""
+  (mapcar #'(lambda (e) (parse-integer e)) (cl-ppcre:split ", " str)))
