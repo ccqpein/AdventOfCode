@@ -1,3 +1,5 @@
+(ql:quickload :cl-ppcre)
+
 (defun read-all-input (filepath)
   (with-open-file (stream filepath)
 	(do ((this-line (read-line stream nil) (read-line stream nil))

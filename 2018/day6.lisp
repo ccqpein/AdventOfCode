@@ -26,9 +26,10 @@
 					 others)))
 
 (defun which-is-closest (this others)
-  (let* ((sorted-results (sort (mapcar #'(lambda (other)
-										   (cons other (distance-between-points this other)))
-									   others)
+  (let* ((sorted-results (sort (mapcar
+								#'(lambda (other)
+									(cons other (distance-between-points this other)))
+								others)
 							   #'(lambda (a b) (< (cdr a) (cdr b)))))
 		 (min-value (cdar sorted-results)))
 	;;(print sorted-results)
@@ -51,7 +52,7 @@
 	   for point in all-points
 	   do (setf (gethash point points) 0))
 	;;(pprint points)
-	(print near2far) (print short2high)
+	;;(print near2far) (print short2high)
 	;;(print nearest) (print farest) (print shortest) (print highest)
 	;;(find-around-points '(175 152) near2far short2high)
 
