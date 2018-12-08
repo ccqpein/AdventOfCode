@@ -8,6 +8,7 @@
 		 cache)
 	  (setf cache (append cache (list this-line))))))
 
+
 (defun read-all-input-together (filepath)
   (with-open-file (stream filepath)
 	(do ((this-char (read-char stream nil) (read-char stream nil))
@@ -15,6 +16,7 @@
 		((not this-char)
 		 cache)
 	  (setf cache (append cache (list this-char))))))
+
 
 (defun read-coordinate (str)
   "str = \"aaa, bbb\""
