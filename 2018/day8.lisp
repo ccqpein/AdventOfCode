@@ -51,6 +51,13 @@
 	  ;;(print "after") (print stack) (print metadata-num-l) (print result) (print rest)
 	  )))
 
+
+;; learn new stuff, this macro cannot work in:
+;; (let ((a (list 1 (list 2 3))) (ind (list 1 0))) (insert-stack-position a ind 2))
+;; cause ind is lexical value, which cannot be eval in compile time. Which I guess is time of
+;; expand macro
+;; But, this will be work:
+;; (defvar *ind* '(1 0)) (let ((a (list 1 (list 2 3)))) (insert-stack-position a *ind* 2))
 (defmacro insert-stack-position (l inds ele)
   `(setf ,(loop
 			 with temp = l
@@ -59,7 +66,8 @@
 			 do (setf temp `(nth ,i ,temp))
 			 finally (return temp))
 		 ,ele))
-  
+
+
 ;;; branch = (list of this (list of child branch))
 (defun get-branch (l)
   (print l)
@@ -73,6 +81,7 @@
 				   (subseq l (- (length l) (cadr l))))
 		   (get-branch (subseq l 2 (- (length l) (cadr l))))))))
 
+
 (defun get-branch-2 (l)
   (print l)
   (cond
@@ -85,7 +94,9 @@
 				   (cut-leave (cddr l)))
 		   (get-branch (subseq l 2 (- (length l) (cadr l))))))))
 
+
 (defun cut-leave (l))
+
 
 (defun get-value-child (l)
   (if (= 0 (caar l))
@@ -97,6 +108,7 @@
 			   0)
 			  (t
 			   (get-value-child (nth (1- i) (cadr l))))))))
+
 
 ;;; part2 is not work, I should use object language to write this
 (defun day8-part2 (filepath)
