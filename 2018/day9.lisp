@@ -38,7 +38,7 @@
 						 (1+ player-n)))
 		 (marble 1 (1+ marble)))
 		((= marble (1+ marble-num)) l)
-	  	  (let (new-l new-ind 23num)
+	  (let (new-l new-ind 23num)
 		(if (/= 0 (mod marble 23))
 			(multiple-value-setq (new-l new-ind) (insert-list l marble ind))
 			(progn (multiple-value-setq (new-l 23num new-ind) (insert-list-when-23 l marble ind))
@@ -49,6 +49,6 @@
 		;;(format t "[~d] ~a~%" player-n l)
 		))
 	(sort (loop
-		for k being the hash-keys of player-points
-		using (hash-value v)
-		collect (list k v)) #'> :key #'cadr)))
+			 for k being the hash-keys of player-points
+			 using (hash-value v)
+			 collect (list k v)) #'> :key #'cadr)))
