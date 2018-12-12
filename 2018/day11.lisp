@@ -52,7 +52,7 @@
 	result-list
 	))
 
-(let ((a (day11 2694))) (last (sort a #'< :key #'cdr)))
+;;(let ((a (day11 2694))) (last (sort a #'< :key #'cdr)))
 
 (defun day11-part2 (serial)
   (let ((all-points (make-array '(300 300)))
@@ -66,24 +66,29 @@
 
 	(do ((size 1 (1+ size)))
 		((= size 300))
+	  (declare (integer size))
 	  (setf result-list
-			(append result-list (loop
-								   with re = '()
-								   for i from 0 to 297
-								   do (setf re
-											(append re
-													(loop
-													   for ii from 0 to 297
-													   collect (cons (list i ii size)
+			(append result-list
+					(last (sort
+						   (loop
+							  with re = '()
+							  for i from 0 to (- 299 size)
+							  do (setf re
+									   (append re
+											   (loop
+												  for ii from 0 to (- 299 size)
+												  collect (cons (list i ii (1+ size))
+																(loop
+																   for i1 from 0 to size
+																   sum 
 																	 (loop
-																		for i1 from 0 to 2
-																		sum 
-																		  (loop
-																			 for ii1 from 0 to 2
-																			 sum (aref all-points (+ i1 i) (+ ii1 ii))))))))
-								   finally (return re)))))
+																		for ii1 from 0 to size
+																		sum (aref all-points (+ i1 i) (+ ii1 ii))))))))
+							  finally (return re))
+						   #'< :key #'cdr)))))
 	;;all-points
-	result-list
+	(last (sort result-list #'< :key #'cdr))
 	))
 
-(let ((a (day11-part2 2694))) (last (sort a #'< :key #'cdr)))
+;;(let ((a (day11-part2 2694))) (last (sort a #'< :key #'cdr)))
+
