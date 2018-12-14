@@ -1,5 +1,6 @@
 (load "./general.lisp")
 
+
 (defun day5 (filepath)
   (let ((cache (read-all-input-together filepath))
 		(result '()))
@@ -18,6 +19,7 @@
 			(incf ind))
 		))))
 
+
 (defun stack-handle (char-list)
   "second version of day5, this method make thing go in O(n)"
   (let ((len (length char-list)))
@@ -32,10 +34,12 @@
 			(t
 			 (setf stack (cons (nth this-char char-list) stack)))))))
 
+
 (defun day5-v2 (filepath)
   "use new stack-handle"
   (let ((cache (read-all-input-together filepath)))
 	(length (stack-handle cache))))
+
 
 (defun day5-part2 (filepath)
   (let ((cache (read-all-input-together filepath))
@@ -62,6 +66,7 @@
 						(incf ind))
 					))))))
 
+
 (defun day5-part2-v2 (filepath)
   (let ((cache (read-all-input-together filepath))
 		(alphabet (mapcar #'list
@@ -73,16 +78,19 @@
 	   collect (let ((inner-cache (remove-from-list cache ab)))
 				 (length (stack-handle inner-cache))))))
 
+
 (defun case-match (a b)
   (cond ((eql (upper-case-p a) (upper-case-p b))
 		 nil)
 		(t
 		 (eql (char-upcase a) (char-upcase b)))))
 
+
 (defun clean-list (l need-delete)
   (loop for i from 0 to (- (length l) 1)
 		when (not (member i need-delete))
-		  collect (nth i l)))
+	 collect (nth i l)))
+
 
 (defun remove-from-list (l char-pair)
   (remove (nth 0 char-pair)
