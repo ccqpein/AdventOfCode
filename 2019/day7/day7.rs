@@ -289,37 +289,37 @@ fn day7(code: Vec<i64>, input_seed: Vec<i64>) -> i64 {
         .unwrap()
 }
 
-fn day7_part2(code: Vec<i64>, input_seed: Vec<i64>) -> i64 {
-    let all_inputs = make_all_possibilities(input_seed);
-    //let all_inputs = vec![input_seed];
+// fn day7_part2(code: Vec<i64>, input_seed: Vec<i64>) -> i64 {
+//     let all_inputs = make_all_possibilities(input_seed);
+//     //let all_inputs = vec![input_seed];
 
-    all_inputs
-        .iter()
-        .map(|x| {
-            let mut last_step_result = 0;
-            let mut result = 0;
+//     all_inputs
+//         .iter()
+//         .map(|x| {
+//             let mut last_step_result = 0;
+//             let mut result = 0;
 
-            // first time?
-            for i in x {
-                result = day5_fix(&code, *i, result);
-                if result == -100 {
-                    return last_step_result;
-                }
-                last_step_result = result;
-            }
+//             // first time?
+//             for i in x {
+//                 result = day5_fix(&code, *i, result);
+//                 if result == -100 {
+//                     return last_step_result;
+//                 }
+//                 last_step_result = result;
+//             }
 
-            loop {
-                result = day5_fix(&code, result, result);
-                if result == -100 {
-                    println!("hello?");
-                    return last_step_result;
-                }
-                last_step_result = result;
-            }
-        })
-        .max()
-        .unwrap()
-}
+//             loop {
+//                 result = day5_fix(&code, result, result);
+//                 if result == -100 {
+//                     println!("hello?");
+//                     return last_step_result;
+//                 }
+//                 last_step_result = result;
+//             }
+//         })
+//         .max()
+//         .unwrap()
+// }
 
 fn main() {
     //let code_m: Vec<i64> = vec![
@@ -337,7 +337,7 @@ fn main() {
 
     //dbg!(merge_vec(vec![], vec![1, 2, 3]));
 
-    dbg!(day7_part2(
+    dbg!(day7(
         vec![
             3, 26, 1001, 26, -4, 26, 3, 27, 1002, 27, 2, 27, 1, 27, 26, 27, 4, 27, 1001, 28, -1,
             28, 1005, 28, 6, 99, 0, 0, 5

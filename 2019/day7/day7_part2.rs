@@ -1,3 +1,4 @@
+#![feature(vec_remove_item)]
 /// part 2 is weird, I re-write it now
 #[derive(Debug)]
 enum Status {
@@ -302,6 +303,68 @@ impl Amplifier {
     }
 }
 
+fn make_all_possibilities(input: Vec<i64>) -> Vec<Vec<i64>> {
+    merge_vec(vec![], input)
+}
+
+fn merge_vec(head: Vec<i64>, tails: Vec<i64>) -> Vec<Vec<i64>> {
+    if tails.len() == 0 {
+        return vec![head];
+    }
+
+    let mut result = vec![];
+    for t in &tails {
+        let mut new_tail = tails.clone();
+        new_tail.remove_item(t);
+        let mut new_head = head.clone();
+        new_head.push(*t);
+        result.append(&mut merge_vec(new_head, new_tail));
+    }
+
+    result
+}
+
+fn day7_part2(ic: Vec<i64>, input_seed: Vec<i64>) -> i64 {
+    let all_inputs = make_all_possibilities(input_seed);
+
+    all_inputs
+        .iter()
+        .map(|x| {
+            let mut amp1 = Amplifier::new(&ic);
+            let mut amp2 = Amplifier::new(&ic);
+            let mut amp3 = Amplifier::new(&ic);
+            let mut amp4 = Amplifier::new(&ic);
+            let mut amp5 = Amplifier::new(&ic);
+
+            amp1.start_with_init(x[0]);
+            amp2.start_with_init(x[1]);
+            amp3.start_with_init(x[2]);
+            amp4.start_with_init(x[3]);
+            amp5.start_with_init(x[4]);
+
+            let mut amps: Vec<Amplifier> = vec![amp1, amp2, amp3, amp4, amp5];
+            let mut input_cache = 0;
+            //let mut output = 0;
+            for i in vec![0, 1, 2, 3, 4].iter().cycle() {
+                match amps[*i as usize].run_with_input(input_cache) {
+                    Status::Waiting => {
+                        input_cache = amps[*i as usize].output;
+                    }
+                    Status::Halt => {
+                        if *i == 4 {
+                            break;
+                        }
+                        input_cache = amps[*i as usize].output;
+                    }
+                }
+            }
+
+            amps[4].output
+        })
+        .max()
+        .unwrap()
+}
+
 fn main() {
     let ic = vec![
         3, 52, 1001, 52, -5, 52, 3, 53, 1, 52, 56, 54, 1007, 54, 5, 55, 1005, 55, 26, 1001, 54, -5,
@@ -309,35 +372,37 @@ fn main() {
         1001, 56, -1, 56, 1005, 56, 6, 99, 0, 0, 0, 0, 10,
     ];
 
-    let mut amp1 = Amplifier::new(&ic);
-    let mut amp2 = Amplifier::new(&ic);
-    let mut amp3 = Amplifier::new(&ic);
-    let mut amp4 = Amplifier::new(&ic);
-    let mut amp5 = Amplifier::new(&ic);
+    //println!("{:?}", day7_part2(ic, vec![9, 8, 7, 6, 5]));
 
-    amp1.start_with_init(9);
-    amp2.start_with_init(7);
-    amp3.start_with_init(8);
-    amp4.start_with_init(5);
-    amp5.start_with_init(6);
+    let ic2 = vec![
+        3, 26, 1001, 26, -4, 26, 3, 27, 1002, 27, 2, 27, 1, 27, 26, 27, 4, 27, 1001, 28, -1, 28,
+        1005, 28, 6, 99, 0, 0, 5,
+    ];
 
-    let mut amps: Vec<Amplifier> = vec![amp1, amp2, amp3, amp4, amp5];
+    //println!("{:?}", day7_part2(ic2, vec![9, 8, 7, 6, 5]));
 
-    let mut input_cache = 0;
-    //let mut output = 0;
-    for i in vec![0, 1, 2, 3, 4].iter().cycle() {
-        match amps[*i as usize].run_with_input(input_cache) {
-            Status::Waiting => {
-                input_cache = amps[*i as usize].output;
-            }
-            Status::Halt => {
-                if *i == 4 {
-                    break;
-                }
-                input_cache = amps[*i as usize].output;
-            }
-        }
-    }
+    let ic3 = vec![
+        3, 8, 1001, 8, 10, 8, 105, 1, 0, 0, 21, 38, 55, 64, 89, 114, 195, 276, 357, 438, 99999, 3,
+        9, 101, 3, 9, 9, 102, 3, 9, 9, 1001, 9, 5, 9, 4, 9, 99, 3, 9, 101, 2, 9, 9, 1002, 9, 3, 9,
+        101, 5, 9, 9, 4, 9, 99, 3, 9, 101, 3, 9, 9, 4, 9, 99, 3, 9, 1002, 9, 4, 9, 101, 5, 9, 9,
+        1002, 9, 5, 9, 101, 5, 9, 9, 102, 3, 9, 9, 4, 9, 99, 3, 9, 101, 3, 9, 9, 1002, 9, 4, 9,
+        101, 5, 9, 9, 102, 5, 9, 9, 1001, 9, 5, 9, 4, 9, 99, 3, 9, 102, 2, 9, 9, 4, 9, 3, 9, 101,
+        2, 9, 9, 4, 9, 3, 9, 102, 2, 9, 9, 4, 9, 3, 9, 101, 2, 9, 9, 4, 9, 3, 9, 102, 2, 9, 9, 4,
+        9, 3, 9, 1002, 9, 2, 9, 4, 9, 3, 9, 101, 1, 9, 9, 4, 9, 3, 9, 101, 1, 9, 9, 4, 9, 3, 9,
+        1001, 9, 1, 9, 4, 9, 3, 9, 1002, 9, 2, 9, 4, 9, 99, 3, 9, 1002, 9, 2, 9, 4, 9, 3, 9, 1001,
+        9, 1, 9, 4, 9, 3, 9, 102, 2, 9, 9, 4, 9, 3, 9, 102, 2, 9, 9, 4, 9, 3, 9, 101, 2, 9, 9, 4,
+        9, 3, 9, 1002, 9, 2, 9, 4, 9, 3, 9, 102, 2, 9, 9, 4, 9, 3, 9, 101, 1, 9, 9, 4, 9, 3, 9,
+        102, 2, 9, 9, 4, 9, 3, 9, 1002, 9, 2, 9, 4, 9, 99, 3, 9, 101, 2, 9, 9, 4, 9, 3, 9, 101, 2,
+        9, 9, 4, 9, 3, 9, 102, 2, 9, 9, 4, 9, 3, 9, 102, 2, 9, 9, 4, 9, 3, 9, 1001, 9, 1, 9, 4, 9,
+        3, 9, 102, 2, 9, 9, 4, 9, 3, 9, 101, 2, 9, 9, 4, 9, 3, 9, 101, 1, 9, 9, 4, 9, 3, 9, 1001,
+        9, 1, 9, 4, 9, 3, 9, 1001, 9, 2, 9, 4, 9, 99, 3, 9, 1001, 9, 1, 9, 4, 9, 3, 9, 1002, 9, 2,
+        9, 4, 9, 3, 9, 1001, 9, 2, 9, 4, 9, 3, 9, 101, 1, 9, 9, 4, 9, 3, 9, 101, 1, 9, 9, 4, 9, 3,
+        9, 102, 2, 9, 9, 4, 9, 3, 9, 1002, 9, 2, 9, 4, 9, 3, 9, 102, 2, 9, 9, 4, 9, 3, 9, 1002, 9,
+        2, 9, 4, 9, 3, 9, 101, 1, 9, 9, 4, 9, 99, 3, 9, 1002, 9, 2, 9, 4, 9, 3, 9, 1001, 9, 1, 9,
+        4, 9, 3, 9, 101, 2, 9, 9, 4, 9, 3, 9, 1002, 9, 2, 9, 4, 9, 3, 9, 101, 1, 9, 9, 4, 9, 3, 9,
+        101, 2, 9, 9, 4, 9, 3, 9, 1001, 9, 1, 9, 4, 9, 3, 9, 1002, 9, 2, 9, 4, 9, 3, 9, 102, 2, 9,
+        9, 4, 9, 3, 9, 1001, 9, 1, 9, 4, 9, 99,
+    ];
 
-    dbg!(&amps[4].output);
+    println!("{:?}", day7_part2(ic3, vec![9, 8, 7, 6, 5]));
 }
