@@ -16,7 +16,7 @@ impl Boost {
         }
     }
 
-    fn run(&mut self) {
+    fn run(&mut self, input: i64) {
         loop {
             if self.index >= self.intcode.len() {
                 return;
@@ -47,20 +47,13 @@ impl Boost {
 
                 3 => {
                     let a = self.intcode[self.index + 1] as usize;
-                    // if let Some(inp) = self.input {
-                    //     self.intcode[a] = inp;
-                    //     self.input = None;
-                    // } else {
-                    //     self.status = Status::Waiting;
-                    //     return Status::Waiting;
-                    // }
 
-                    self.intcode[a] = 1;
+                    self.intcode[a] = input;
                     self.index += 2
                 }
                 4 => {
                     let a = self.intcode[self.index + 1] as usize;
-                    //println!("index = {}, output = {}", self.index, self.intcode[a]);
+
                     self.output.push(self.intcode[a]);
                     self.index += 2
                 }
@@ -126,13 +119,13 @@ impl Boost {
                 9 => {
                     self.relative_base +=
                         self.intcode[self.intcode[self.index + 1] as usize] as usize;
-                    println!(
-                        "index = {}, this code = {}, output = {:?}, new relative = {}",
-                        self.index,
-                        self.intcode[self.index],
-                        self.intcode[self.index + 1],
-                        self.relative_base
-                    );
+                    // println!(
+                    //     "index = {}, this code = {}, output = {:?}, new relative = {}",
+                    //     self.index,
+                    //     self.intcode[self.index],
+                    //     self.intcode[self.index + 1],
+                    //     self.relative_base
+                    // );
                     self.index += 2;
                 }
 
@@ -179,11 +172,13 @@ impl Boost {
                             } else {
                                 cc = c as i64
                             }
-                            println!(
-                                "code 1, this index = {}, this code = {}, aa = {}, bb = {}, cc = {}",
-                                self.index, self.intcode[self.index], aa, bb,cc
-                            );
-                            println!("index {} value {} change to {}", cc, self.intcode[cc as usize], aa+bb);
+
+                            // println!(
+                            //     "code 1, this index = {}, this code = {}, aa = {}, bb = {}, cc = {}",
+                            //     self.index, self.intcode[self.index], aa, bb,cc
+                            // );
+                            // println!("index {} value {} change to {}", cc, self.intcode[cc as usize], aa+bb);
+
                             self.intcode[cc as usize] = aa + bb;
                             self.index += 4;
                         }
@@ -210,22 +205,23 @@ impl Boost {
                             } else {
                                 cc = c as i64
                             }
-                            
+
                             // println!(
                             //     "code 2, this index = {}, this code = {}, aa = {}, bb = {}, cc = {}",
                             //     self.index, self.intcode[self.index], aa, bb, cc
                             // );
-                            println!("index {} value {} change to {}", cc, self.intcode[cc as usize], aa*bb);
+                            //println!("index {} value {} change to {}", cc, self.intcode[cc as usize], aa*bb);
+
                             self.intcode[cc as usize] = aa * bb;
-                            
+
                             self.index += 4;
                         }
 
                         3 => {
                             if code[1] == 0 {
-                                self.intcode[a as usize] = 1
+                                self.intcode[a as usize] = input
                             } else if code[1] == 2 {
-                                self.intcode[(a + self.relative_base as i64) as usize] = 1
+                                self.intcode[(a + self.relative_base as i64) as usize] = input
                             } else {
                                 panic!();
                             }
@@ -241,8 +237,7 @@ impl Boost {
                             } else {
                                 aa = a as i64
                             }
-                            //println!("index = {}, output = {}", self.index, aa);
-                            ////println!("{:?}", self);
+
                             self.output.push(aa);
                             self.index += 2;
                         }
@@ -264,10 +259,10 @@ impl Boost {
                                 bb = b as i64
                             }
 
-                            println!(
-                                "code 5, this index = {}, this code = {}, aa = {}, bb = {}",
-                                self.index, self.intcode[self.index], aa, bb
-                            );
+                            // println!(
+                            //     "code 5, this index = {}, this code = {}, aa = {}, bb = {}",
+                            //     self.index, self.intcode[self.index], aa, bb
+                            // );
 
                             if aa != 0 {
                                 self.index = bb as usize;
@@ -275,7 +270,7 @@ impl Boost {
                                 self.index += 3
                             }
                         }
-                        
+
                         6 => {
                             if code[1] == 0 {
                                 aa = self.intcode[a as usize] as i64
@@ -293,10 +288,10 @@ impl Boost {
                                 bb = b as i64
                             }
 
-                            println!(
-                                "code 6, this index = {}, this code = {},{},{}",
-                                self.index, self.intcode[self.index], aa, bb
-                            );
+                            // println!(
+                            //     "code 6, this index = {}, this code = {},{},{}",
+                            //     self.index, self.intcode[self.index], aa, bb
+                            // );
 
                             if aa == 0 {
                                 self.index = bb as usize;
@@ -304,7 +299,7 @@ impl Boost {
                                 self.index += 3
                             }
                         }
-                        
+
                         7 => {
                             if code[1] == 0 {
                                 aa = self.intcode[a as usize] as i64
@@ -328,10 +323,10 @@ impl Boost {
                                 cc = c as i64
                             }
 
-                            println!(
-                                "code 7, this index = {}, this code = {}, aa = {}, bb = {}, cc = {}",
-                                self.index, self.intcode[self.index], aa, bb,cc 
-                            );
+                            // println!(
+                            //     "code 7, this index = {}, this code = {}, aa = {}, bb = {}, cc = {}",
+                            //     self.index, self.intcode[self.index], aa, bb,cc
+                            // );
 
                             if aa < bb {
                                 self.intcode[cc as usize] = 1;
@@ -342,7 +337,6 @@ impl Boost {
                             self.index += 4;
                         }
                         8 => {
-                            println!("{:?}",code);
                             if code[1] == 0 {
                                 aa = self.intcode[a as usize] as i64
                             } else if code[1] == 2 {
@@ -365,10 +359,11 @@ impl Boost {
                                 cc = c as i64
                             }
 
-                            println!(
-                                "code 8, this index = {}, this code = {}, aa = {}, bb = {}, cc = {}",
-                                self.index, self.intcode[self.index], aa, bb, cc
-                            );
+                            // println!(
+                            //     "code 8, this index = {}, this code = {}, aa = {}, bb = {}, cc = {}",
+                            //     self.index, self.intcode[self.index], aa, bb, cc
+                            // );
+
                             if aa == bb {
                                 self.intcode[cc as usize] = 1;
                             } else {
@@ -387,19 +382,14 @@ impl Boost {
                                 self.relative_base +=
                                     self.intcode[(a + self.relative_base as i64) as usize] as usize;
                             }
+
                             // println!(
-                            //     "{:?}",
-                            //     self.intcode[(self.intcode[self.index + 1]
-                            //         + self.relative_base as i64)
-                            //         as usize] as usize
+                            //     "index = {}, this code = {}, output = {:?}, new relative = {}",
+                            //     self.index,
+                            //     self.intcode[self.index],
+                            //     self.intcode[self.index + 1],
+                            //     self.relative_base
                             // );
-                            println!(
-                                "index = {}, this code = {}, output = {:?}, new relative = {}",
-                                self.index,
-                                self.intcode[self.index],
-                                self.intcode[self.index + 1],
-                                self.relative_base
-                            );
                             self.index += 2
                         }
                         _ => (),
@@ -410,11 +400,11 @@ impl Boost {
     }
 }
 
-fn day9(mut intcode: Vec<i64>) -> Vec<i64> {
+fn day9(mut intcode: Vec<i64>, input: i64) -> Vec<i64> {
     intcode.append(&mut [0; 10000].to_vec());
     let mut this = Boost::new(&intcode);
 
-    this.run();
+    this.run(input);
     this.output
 }
 
@@ -473,5 +463,6 @@ fn main() {
         21202, 1, 1, -1, 21201, -2, -3, 1, 21101, 957, 0, 0, 1106, 0, 922, 22201, 1, -1, -2, 1105,
         1, 968, 22102, 1, -2, -2, 109, -3, 2105, 1, 0,
     ];
-    dbg!(day9(intcode));
+    //dbg!(day9(intcode,1)); // part 1
+    dbg!(day9(intcode, 2)); // part 2
 }
