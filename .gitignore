@@ -1,3 +1,5 @@
 *.input*
 .DS_Store
 *.fasl
+*target
+*Cargo.lock
