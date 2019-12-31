@@ -32,8 +32,8 @@ impl Unit {
 
 #[derive(Debug, Hash)]
 struct ReactExpression {
-    source_list: Vec<(String, i32)>,
-    result: (String, i32),
+    source_list: Vec<(String, i64)>,
+    result: (String, i64),
 }
 
 impl ReactExpression {
@@ -49,16 +49,16 @@ impl ReactExpression {
         let mut temp: Vec<&str> = line.rsplit(" => ").collect();
 
         let cache = Unit::parse(temp[0]);
-        result.result = (cache.element, cache.num);
+        result.result = (cache.element, cache.num as i64);
 
         temp = temp[1].split(", ").collect();
         for cache in temp.iter().map(|x| Unit::parse(x)) {
-            result.source_list.push((cache.element, cache.num));
+            result.source_list.push((cache.element, cache.num as i64));
         }
         result
     }
 
-    fn all_source(&self) -> Vec<(String, i32)> {
+    fn all_source(&self) -> Vec<(String, i64)> {
         self.source_list.clone()
     }
 
@@ -75,7 +75,7 @@ struct ReactChain {
     table: HashMap<String, ReactExpression>,
     depth: HashMap<String, i32>,
 
-    refuse: HashMap<String, i32>,
+    refuse: HashMap<String, i64>,
 }
 
 impl ReactChain {
@@ -145,7 +145,7 @@ impl ReactChain {
         }
     }
 
-    fn find_sum_ele(&self, result: &str, many: i32) -> Vec<(String, i32)> {
+    fn find_sum_ele(&self, result: &str, many: i64) -> Vec<(String, i64)> {
         let re = if let Some(r) = self.table.get(result) {
             r
         } else {
@@ -165,12 +165,12 @@ impl ReactChain {
         re.all_source()
             .iter()
             .map(|x| (x.0.clone(), x.1 * total))
-            .collect::<Vec<(String, i32)>>()
+            .collect::<Vec<(String, i64)>>()
     }
 
     // this function is totaly wrong
-    fn find_to_ORE(&self, result: &str, many: i32) -> Vec<(String, i32)> {
-        let mut list: Vec<(String, i32)> = self.find_sum_ele(result, many);
+    fn find_to_ORE(&self, result: &str, many: i64) -> Vec<(String, i64)> {
+        let mut list: Vec<(String, i64)> = self.find_sum_ele(result, many);
 
         let mut highest_root = list
             .iter()
@@ -179,7 +179,7 @@ impl ReactChain {
             .unwrap();
         while *highest_root != 1 {
             println!("this is list {:?}", list);
-            let mut temp: Vec<Vec<(String, i32)>> = list
+            let mut temp: Vec<Vec<(String, i64)>> = list
                 .iter()
                 .map(|x| {
                     if self.depth.get(&x.0).unwrap() == highest_root {
@@ -192,13 +192,13 @@ impl ReactChain {
 
             //println!("{:?}", &temp);
 
-            let mut table: HashMap<String, i32> = HashMap::new(); // flat list
+            let mut table: HashMap<String, i64> = HashMap::new(); // flat list
             for i in temp {
                 i.iter()
                     .for_each(|e| *table.entry(e.0.clone()).or_insert(0) += e.1)
             }
             //dbg!(&table);
-            list = table.into_iter().collect::<Vec<(String, i32)>>();
+            list = table.into_iter().collect::<Vec<(String, i64)>>();
             highest_root = list
                 .iter()
                 .map(|x| self.depth.get(&x.0).unwrap())
@@ -208,7 +208,7 @@ impl ReactChain {
 
         //list[0].clone()
         while list.len() > 1 {
-            let mut temp: Vec<Vec<(String, i32)>> = list
+            let mut temp: Vec<Vec<(String, i64)>> = list
                 .iter()
                 .map(|x| {
                     if x.0 != "ORE" {
@@ -221,19 +221,19 @@ impl ReactChain {
 
             println!("{:?}", &temp);
 
-            let mut table: HashMap<String, i32> = HashMap::new(); // flat list
+            let mut table: HashMap<String, i64> = HashMap::new(); // flat list
             for i in temp {
                 i.iter()
                     .for_each(|e| *table.entry(e.0.clone()).or_insert(0) += e.1)
             }
             //dbg!(&table);
-            list = table.into_iter().collect::<Vec<(String, i32)>>();
+            list = table.into_iter().collect::<Vec<(String, i64)>>();
         }
 
         list
     }
 
-    fn cost(&mut self, result: &str, many: i32) -> i32 {
+    fn cost(&mut self, result: &str, many: i64) -> i64 {
         if result == "ORE" {
             return many;
         }
@@ -260,6 +260,28 @@ impl ReactChain {
             *self.refuse.get_mut(result).unwrap() += need * quantity_producted - many;
         }
         return ore_needed;
+    }
+
+    fn part2(&mut self) -> i64 {
+        let stock = 100000;
+        let trillion: i64 = 1000000000000;
+
+        let (mut ore_consume, mut fuel, mut last_stock) = (0, 0, 0);
+        while ore_consume < trillion {
+            last_stock = trillion - ore_consume;
+            ore_consume += self.cost("FUEL", stock);
+            fuel += 1;
+        }
+
+        fuel = (fuel - 1) * stock;
+
+        ore_consume = 0;
+        while ore_consume < last_stock {
+            ore_consume += self.cost("FUEL", 1);
+            fuel += 1
+        }
+
+        (fuel - 1) as i64
     }
 }
 
@@ -295,9 +317,12 @@ fn main() {
             .collect::<Vec<ReactExpression>>(),
     );
 
-    //rc.update_depth();
-    //dbg!(&rc.depth);
-    //dbg!(rc.find_sum_ele("C", 37));
-    //dbg!(rc.find_to_ORE("FUEL", 1));
-    dbg!(rc.cost("FUEL", 1));
+    dbg!(rc.cost("FUEL", 1)); // part 1
+
+    let mut rc = ReactChain::new(
+        a.iter()
+            .map(|x| ReactExpression::parse(x))
+            .collect::<Vec<ReactExpression>>(),
+    );
+    dbg!(rc.part2());
 }
