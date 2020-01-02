@@ -4,7 +4,7 @@ pub struct Intcode {
     pub output: Vec<i64>,
     relative_base: usize,
     index: usize,
-    input: Vec<i64>,
+    pub input: Vec<i64>,
     pub status: String,
 }
 
@@ -18,6 +18,10 @@ impl Intcode {
             input: vec![],
             status: String::new(),
         }
+    }
+
+    pub fn clean_input(&mut self) {
+        self.input = vec![];
     }
 
     pub fn run(&mut self, input: Option<i64>) {

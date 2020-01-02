@@ -1,7 +1,7 @@
 use day11::*;
 use std::collections::{HashMap, HashSet};
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 enum Direct {
     East,  // 4
     West,  // 3
@@ -46,6 +46,15 @@ impl Direct {
             _ => panic!(),
         }
     }
+
+    fn get_num(&self) -> i32 {
+        match self {
+            Self::East => 4,
+            Self::West => 3,
+            Self::South => 2,
+            Self::North => 1,
+        }
+    }
 }
 impl From<i32> for Direct {
     fn from(a: i32) -> Self {
@@ -59,12 +68,13 @@ impl From<i32> for Direct {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct Coord {
     x: i32,
     y: i32,
     open: HashSet<Direct>,
-    unknown: HashSet<Direct>,
+
+    havent_been_there: HashSet<Direct>,
 }
 
 impl Coord {
@@ -73,21 +83,25 @@ impl Coord {
             x: x,
             y: y,
             open: HashSet::new(),
-            unknown: Direct::all(),
+
+            havent_been_there: Direct::all(),
         }
     }
 
     fn set_wall(&mut self, i: i32) {
         let wall = Direct::from(i);
 
-        self.unknown.remove(&wall);
+        self.havent_been_there.remove(&wall);
     }
 
     fn set_open(&mut self, i: i32) {
-        let wall = Direct::from(i);
+        let temp = Direct::from(i);
 
-        self.unknown.remove(&wall);
-        self.open.insert(wall);
+        self.open.insert(temp);
+    }
+
+    fn have_been_there(&mut self, i: i32) {
+        self.havent_been_there.remove(&Direct::from(i));
     }
 }
 
@@ -108,6 +122,7 @@ impl Board {
     }
 
     fn run(&mut self, input: i32) -> i64 {
+        self.intcode.clean_input();
         self.intcode.run(Some(input as i64));
         self.intcode.output.pop().unwrap()
     }
@@ -126,12 +141,24 @@ impl Board {
             .set_open(*i)
     }
 
+    fn find_all_path(&mut self, x: &i32, y: &i32) -> HashSet<Direct> {
+        let this_coord = self.table.get(&(*x, *y)).unwrap();
+
+        this_coord
+            .open
+            .intersection(&this_coord.havent_been_there)
+            .map(|x| x.clone())
+            .collect()
+    }
+
     fn start(&mut self) -> Vec<Direct> {
         let seed: [i32; 4] = [1, 2, 3, 4];
         let mut x = 0;
         let mut y = 0;
-        //let mut current_co = Coord::new(0, 0);
+
         loop {
+            //println!("{:?}", (x, y));
+            // explore around
             for i in &seed {
                 let output = self.run(*i);
                 if output == 2 {
@@ -140,17 +167,121 @@ impl Board {
                 };
 
                 match output {
-                    0 => self.set_wall(&x, &y, i),
+                    0 => {
+                        //println!("find wall {:?}", i);
+                        //println!("check input  {:?}", self.intcode.input);
+                        self.set_wall(&x, &y, i)
+                    }
                     1 => {
                         self.set_open(&x, &y, i);
                         self.run(Direct::opposite(i)); // back
                     }
                     _ => panic!(),
                 }
+            }
 
-                //x += Direct::get_x_change(i);
-                //y += Direct::get_y_change(i);
-                //self.run_stack.push(Direct::from(*i));
+            let open = self.find_all_path(&x, &y);
+            //println!("{:?}", self.table.get(&(x, y)));
+            //println!("{:?}", open);
+
+            if open.is_empty() {
+                let last_stack = if let Some(s) = self.run_stack.pop() {
+                    s
+                } else {
+                    return self.run_stack.clone();
+                };
+
+                let way_back = Direct::opposite(&Direct::get_num(&last_stack));
+                self.run(way_back);
+                x += Direct::get_x_change(&way_back);
+                y += Direct::get_y_change(&way_back);
+
+                self.table
+                    .get_mut(&(x, y))
+                    .unwrap()
+                    .have_been_there(Direct::opposite(&way_back));
+            } else {
+                let way_go = Direct::get_num(open.iter().next().unwrap());
+                //println!("way to go {}", way_go);
+                self.run(way_go);
+                x += Direct::get_x_change(&way_go);
+                y += Direct::get_y_change(&way_go);
+
+                self.run_stack.push(Direct::from(way_go));
+
+                self.table
+                    .entry((x, y))
+                    .or_insert(Coord::new(x, y))
+                    .have_been_there(Direct::opposite(&way_go));
+            }
+        }
+    }
+
+    fn start_part2(&mut self) -> (i32, i32) {
+        let seed: [i32; 4] = [1, 2, 3, 4];
+        let mut x = 0;
+        let mut y = 0;
+
+        let mut result = (0, 0);
+
+        loop {
+            //println!("{:?}", (x, y));
+            // explore around
+            for i in &seed {
+                let output = self.run(*i);
+                if output == 2 {
+                    self.run_stack.push(Direct::from(*i));
+                    println!("find oxygen")
+                    result = (x + Direct::get_x_change(i), y + Direct::get_x_change(i));
+                };
+
+                match output {
+                    0 => {
+                        //println!("find wall {:?}", i);
+                        //println!("check input  {:?}", self.intcode.input);
+                        self.set_wall(&x, &y, i)
+                    }
+                    1 => {
+                        self.set_open(&x, &y, i);
+                        self.run(Direct::opposite(i)); // back
+                    }
+                    _ => panic!(),
+                }
+            }
+
+            let open = self.find_all_path(&x, &y);
+            //println!("{:?}", self.table.get(&(x, y)));
+            //println!("{:?}", open);
+
+            if open.is_empty() {
+                let last_stack = if let Some(s) = self.run_stack.pop() {
+                    s
+                } else {
+                    return self.run_stack.clone();
+                };
+
+                let way_back = Direct::opposite(&Direct::get_num(&last_stack));
+                self.run(way_back);
+                x += Direct::get_x_change(&way_back);
+                y += Direct::get_y_change(&way_back);
+
+                self.table
+                    .get_mut(&(x, y))
+                    .unwrap()
+                    .have_been_there(Direct::opposite(&way_back));
+            } else {
+                let way_go = Direct::get_num(open.iter().next().unwrap());
+                //println!("way to go {}", way_go);
+                self.run(way_go);
+                x += Direct::get_x_change(&way_go);
+                y += Direct::get_y_change(&way_go);
+
+                self.run_stack.push(Direct::from(way_go));
+
+                self.table
+                    .entry((x, y))
+                    .or_insert(Coord::new(x, y))
+                    .have_been_there(Direct::opposite(&way_go));
             }
         }
     }
@@ -163,7 +294,24 @@ fn day15(filepath: &str) -> Vec<Direct> {
 
     let mut bb = Board::new(&intcode);
 
-    bb.run_stack
+    bb.start()
 }
 
-fn main() {}
+fn day15_part2(filepath: &str) {
+    //make intcode
+    let mut intcode = read_the_damn_intcode(filepath);
+    intcode.append(&mut [0; 10000].to_vec()); // give the buffer
+
+    //let mut bb = Board::new(&intcode);
+}
+
+fn main() {
+    use std::env;
+    let path = env::current_dir()
+        .unwrap()
+        .into_os_string()
+        .into_string()
+        .unwrap();
+
+    dbg!(day15(&format!("{}{}", path, "/src/day15.input")).len());
+}
