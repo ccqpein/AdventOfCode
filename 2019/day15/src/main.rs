@@ -103,6 +103,18 @@ impl Coord {
     fn have_been_there(&mut self, i: i32) {
         self.havent_been_there.remove(&Direct::from(i));
     }
+
+    fn part2_all_open(&self) -> HashSet<(i32, i32)> {
+        self.open
+            .iter()
+            .map(|d| {
+                (
+                    self.x + Direct::get_x_change(&Direct::get_num(d)),
+                    self.y + Direct::get_y_change(&Direct::get_num(d)),
+                )
+            })
+            .collect()
+    }
 }
 
 struct Board {
@@ -230,18 +242,14 @@ impl Board {
             for i in &seed {
                 let output = self.run(*i);
                 if output == 2 {
-                    self.run_stack.push(Direct::from(*i));
-                    println!("find oxygen")
+                    //self.run_stack.push(Direct::from(*i));
                     result = (x + Direct::get_x_change(i), y + Direct::get_x_change(i));
+                    println!("find oxygen : {:?}", result);
                 };
 
                 match output {
-                    0 => {
-                        //println!("find wall {:?}", i);
-                        //println!("check input  {:?}", self.intcode.input);
-                        self.set_wall(&x, &y, i)
-                    }
-                    1 => {
+                    0 => self.set_wall(&x, &y, i),
+                    1 | 2 => {
                         self.set_open(&x, &y, i);
                         self.run(Direct::opposite(i)); // back
                     }
@@ -257,7 +265,7 @@ impl Board {
                 let last_stack = if let Some(s) = self.run_stack.pop() {
                     s
                 } else {
-                    return self.run_stack.clone();
+                    return result;
                 };
 
                 let way_back = Direct::opposite(&Direct::get_num(&last_stack));
@@ -285,6 +293,55 @@ impl Board {
             }
         }
     }
+
+    fn print_map(&self, co: (i32, i32)) {
+        for r in -21..20 {
+            for c in -25..30 {
+                if r == co.0 && c == co.1 {
+                    print!("O");
+                    continue;
+                }
+                if let Some(co) = self.table.get(&(r as i32, c as i32)) {
+                    print!(".")
+                } else {
+                    print!("#");
+                }
+            }
+            println!("");
+        }
+    }
+
+    fn oxygen_run(&self, ox: (i32, i32)) -> i32 {
+        let mut next_round: HashSet<(i32, i32)> = HashSet::new();
+        next_round.insert(ox);
+
+        let mut have_done: HashSet<(i32, i32)> = HashSet::new();
+        have_done.insert(ox);
+
+        let mut result = 0;
+
+        while next_round.len() != 0 {
+            let mut sset = HashSet::new();
+            next_round.iter().for_each(|co| {
+                sset = sset
+                    .union(&self.table.get(co).unwrap().part2_all_open())
+                    .map(|x| x.clone())
+                    .collect();
+            });
+
+            have_done = have_done.union(&next_round).cloned().collect();
+            next_round = sset.difference(&have_done).cloned().collect();
+
+            result += 1;
+
+            println!(
+                "minute: {}, have_done: {:?}, next_round: {:?}",
+                result, have_done, next_round
+            )
+        }
+
+        result
+    }
 }
 
 fn day15(filepath: &str) -> Vec<Direct> {
@@ -302,7 +359,11 @@ fn day15_part2(filepath: &str) {
     let mut intcode = read_the_damn_intcode(filepath);
     intcode.append(&mut [0; 10000].to_vec()); // give the buffer
 
-    //let mut bb = Board::new(&intcode);
+    let mut bb = Board::new(&intcode);
+
+    let co = bb.start_part2(); // read all map
+
+    println!("{:?}", bb.oxygen_run(co));
 }
 
 fn main() {
@@ -313,5 +374,6 @@ fn main() {
         .into_string()
         .unwrap();
 
-    dbg!(day15(&format!("{}{}", path, "/src/day15.input")).len());
+    //dbg!(day15(&format!("{}{}", path, "/src/day15.input")).len());
+    day15_part2(&format!("{}{}", path, "/src/day15.input"));
 }
