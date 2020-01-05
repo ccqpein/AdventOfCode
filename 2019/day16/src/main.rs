@@ -89,6 +89,20 @@ fn fft_a(input: Vec<i32>) -> Vec<i32> {
     result
 }
 
+fn fft2(input: Vec<i32>) -> Vec<i32> {
+    let mut this_round = [0].repeat(input.len());
+
+    let mut ans = 0;
+    for i in 1..input.len() / 2 {
+        ans += input[input.len() - 2 - i];
+        let index = this_round.len() - 1 - i - 1;
+        this_round[index as usize] = ans
+    }
+
+    this_round = this_round.iter().map(|x| x.abs() % 10).collect();
+    this_round
+}
+
 fn fft_loop(input: Vec<i32>, time: usize) -> Vec<i32> {
     let mut a = input;
     for i in 0..time {
@@ -134,13 +148,19 @@ fn day16_part2(filepath: &str) {
 
     contents = contents.repeat(10000); // 10000 times
     let offset: usize = contents[0..7].parse().unwrap();
+    //println!("offset: {}", offset);
+    // println!(
+    //     "{:?}",
+    //     &fft_loop(str_2_vec(&contents), 100)[offset..offset + 8]
+    // );
     println!(
         "{:?}",
-        &fft_loop(str_2_vec(&contents), 100)[offset..offset + 8]
+        &fft_loop(str_2_vec(&contents), 100)[offset + 7..offset + 15]
     );
 }
 
 fn main() {
     //day16("day16.input");
     day16_part2("day16.input");
+    //println!("{:?}", fft2(vec![1, 2, 3, 4, 5, 6, 7, 8]));
 }
