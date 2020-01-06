@@ -89,6 +89,7 @@ fn fft_a(input: Vec<i32>) -> Vec<i32> {
     result
 }
 
+// also useless
 fn fft2(input: Vec<i32>) -> Vec<i32> {
     let mut this_round = [0].repeat(input.len());
 
@@ -145,18 +146,31 @@ fn day16_part2(filepath: &str) {
     let mut file = File::open(format!("{}/src/{}", path, filepath)).unwrap();
     let mut contents = String::new();
     file.read_to_string(&mut contents).unwrap();
-
+    ////////////////////
+    ////////////////////
+    ////////////////////
+    let mut initial = str_2_vec(&contents);
     contents = contents.repeat(10000); // 10000 times
+
     let offset: usize = contents[0..7].parse().unwrap();
-    //println!("offset: {}", offset);
-    // println!(
-    //     "{:?}",
-    //     &fft_loop(str_2_vec(&contents), 100)[offset..offset + 8]
-    // );
-    println!(
-        "{:?}",
-        &fft_loop(str_2_vec(&contents), 100)[offset + 7..offset + 15]
-    );
+    let r_length = initial.len() * 10000 - offset + 1;
+    initial.reverse();
+    initial = initial.repeat(10000);
+
+    let mut result: Vec<_> = [0].repeat(r_length).to_vec();
+
+    for ind in 0..=r_length - 2 {
+        result[r_length - 2 - ind] = initial[ind]
+    }
+
+    for _ in 0..100 {
+        for i in 0..=r_length - 2 {
+            result[r_length - 2 - i] =
+                (result[r_length - 2 - i] + result[r_length - 2 - i + 1]) % 10
+        }
+    }
+
+    println!("{:?}", result.drain(..8));
 }
 
 fn main() {
