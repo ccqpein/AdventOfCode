@@ -3,7 +3,7 @@ pub struct Intcode {
     intcode: Vec<i64>,
     pub output: Vec<i64>,
     relative_base: usize,
-    index: usize,
+    pub index: usize,
     pub input: Vec<i64>,
     pub status: String,
 }
@@ -224,6 +224,7 @@ impl Intcode {
                             }
 
                             let input = self.input[0];
+                            self.input.drain(..1);
 
                             if code[1] == 0 {
                                 self.intcode[a as usize] = input

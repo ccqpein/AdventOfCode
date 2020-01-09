@@ -83,6 +83,12 @@ fn find_if_intersection(set: &HashSet<(i64, i64)>, coop: (i64, i64)) -> bool {
     }
 }
 
+fn ascii(input: &str) -> Vec<i64> {
+    let mut r = input.chars().map(|x| x as i64).collect::<Vec<i64>>();
+    //r.push(10);
+    r
+}
+
 fn day17_part2(filepath: &str) {
     use std::env;
 
@@ -99,9 +105,28 @@ fn day17_part2(filepath: &str) {
 
     let mut ic = Intcode::new(&intcode);
 
-    ic.run(None); // run intcode machine
+    ic.input = ascii("A,B,A,C,B,A,C,B,A,C");
+    ic.run(Some(10));
+
+    ic.input = ascii("L,12,L,12,L,6,L,6");
+    ic.run(Some(10));
+
+    ic.input = ascii("R,8,R,4,L,12");
+    ic.run(Some(10));
+
+    ic.input = ascii("L,12,L,6,R,12,R,8");
+    ic.run(Some(10));
+
+    ic.run(Some(110));
+    ic.run(Some(10));
+
+    //println!("{}", ic.status);
+
+    print_map(ic.output.clone());
+    println!("{:?}", ic.output.last());
 }
 
 fn main() {
     //day17("day17.input")
+    day17_part2("day17.input")
 }
