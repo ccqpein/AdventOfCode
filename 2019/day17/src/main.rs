@@ -83,6 +83,25 @@ fn find_if_intersection(set: &HashSet<(i64, i64)>, coop: (i64, i64)) -> bool {
     }
 }
 
+fn day17_part2(filepath: &str) {
+    use std::env;
+
+    let path = env::current_dir()
+        .unwrap()
+        .into_os_string()
+        .into_string()
+        .unwrap();
+
+    //make intcode
+    let mut intcode = read_the_damn_intcode(&format!("{}/src/{}", path, filepath));
+    intcode.append(&mut [0; 10000].to_vec()); // give the buffer
+    intcode[0] = 2; // start different mode
+
+    let mut ic = Intcode::new(&intcode);
+
+    ic.run(None); // run intcode machine
+}
+
 fn main() {
-    day17("day17.input")
+    //day17("day17.input")
 }
