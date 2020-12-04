@@ -41,6 +41,13 @@ fn part2(vc: Vec<Chars>, rules: &[(usize, usize)], line_count: usize) -> usize {
         .fold(1, |acc, x| acc * x)
 }
 
+fn part2_miao(vc: Vec<Chars>, rules: &[(usize, usize)], line_count: usize) -> usize {
+    rules
+        .iter()
+        .map(|rule| part2_helper(vc.clone(), *rule, line_count))
+        .product()
+}
+
 fn main() {
     let input = read_file_by_line(String::from("./src/day3.input"));
     let line_num = input[0].len();
@@ -50,9 +57,22 @@ fn main() {
     println!(
         "part2 answer: {:?}",
         part2(
-            input,
+            input.clone(),
             &vec![(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)],
             line_num
         )
     );
+
+    assert_eq!(
+        part2(
+            input.clone(),
+            &vec![(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)],
+            line_num
+        ),
+        part2_miao(
+            input,
+            &vec![(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)],
+            line_num
+        )
+    )
 }
