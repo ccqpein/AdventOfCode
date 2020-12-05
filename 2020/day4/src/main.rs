@@ -27,12 +27,6 @@ fn clean_passp(pass: &Vec<String>) -> Vec<String> {
         .collect()
 }
 
-fn split_colon<'a>(pass: &'a Vec<String>) -> Vec<Vec<&'a str>> {
-    pass.iter()
-        .map(|p| p.split(|s| s == ':').collect())
-        .collect()
-}
-
 fn split_colon_set<'a>(pass: &'a Vec<String>) -> HashSet<String> {
     pass.iter()
         .map(|p| p.split(|s| s == ':').next().unwrap().to_string())
