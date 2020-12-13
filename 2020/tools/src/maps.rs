@@ -135,9 +135,14 @@ impl<'a, T> Iterator for MapIterMut<'a, T> {
             let r = &mut *a.as_mut_ptr().add(self.r_offset) as &mut Vec<T>;
             r.as_mut_ptr().add(self.c_offset).as_mut()
         };
+
         self.c_offset += 1;
         a
     }
+}
+
+fn print_type_of<T>(_: &T) {
+    println!("{}", std::any::type_name::<T>())
 }
 
 #[cfg(test)]
@@ -153,13 +158,25 @@ mod tests {
 
         for i in &mut m {
             *i += 1;
+            print_type_of(i);
         }
 
         for i in &m {
+            print_type_of(i);
             println!("{:?}", i);
         }
 
         *m.get_mut(0, 0).unwrap() += 1;
-        assert_eq!(m.inner[0][0], 3)
+        assert_eq!(m.inner[0][0], 3);
+
+        let mut v = vec![1, 2, 3];
+        for i in &v {
+            // if delete &, i is T of print_type_of, now it is &T
+            print_type_of(i);
+        }
+
+        for i in &mut v {
+            print_type_of(i);
+        }
     }
 }
