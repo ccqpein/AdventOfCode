@@ -141,6 +141,36 @@ impl<'a, T> Iterator for MapIterMut<'a, T> {
     }
 }
 
+struct MapIterScope<'a, T: 'a> {
+    /// offsets are where is this map during iter
+    r_offset: usize,
+    c_offset: usize,
+
+    scope: isize,
+
+    map: &'a Map<T>,
+}
+
+impl<'a, T> MapIterScope<'a, T> {
+    fn new(m: &'a Map<T>) -> Self {
+        Self {
+            r_offset: 0,
+            c_offset: 0,
+            scope: 0,
+            map: m,
+        }
+    }
+}
+
+//:= TODO: stop here
+// impl<'a, T> Iterator for MapIterScope<'a, T> {
+//     type Item = &'a T;
+
+//     fn next(&mut self) -> Option<Self::Item> {
+
+//     }
+// }
+
 fn print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>())
 }
