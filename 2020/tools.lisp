@@ -56,13 +56,10 @@
     m
     ))
 
-(defmacro with-matrix ((row col m) form &body body)
-  "row is row number, col is col number, m is matrix of form"
-  (let ((dims (gensym)))
-    `(let* ((,m ,form)
-            (,dims (array-dimensions ,m))
-            (,row (car ,dims))
-            (,col (cadr ,dims))
-            )
-       ,@body
-       )))
+(defmacro loop-array (dims syms &rest rest)
+  (if (not dims)
+      (cons 'progn rest)
+      (let ((xn (car dims)))
+        `(loop
+           for ,(car syms) from 0 below ,xn
+           do (loop-array ,(cdr dims) ,(cdr syms) ,@rest)))))
