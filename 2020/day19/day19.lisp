@@ -59,8 +59,12 @@
       (let* ((table (parse-rule rule))
              (all-0 (rec-find-rule 0 table)))
         (setf *table* table)
-        (count-if (lambda (e) (member e all-0 :test 'string=)) data)
-        ;;(values rule data)
+        ;;(print (count-if (lambda (e) (member e all-0 :test 'string=)) data))
+        (loop
+          for e in data
+          if (member e all-0 :test 'string=)
+            collect e into cache
+          finally (return cache))
         )
       )))
 
@@ -112,17 +116,73 @@
         (if (member target cache)
             (list (find-if (lambda (x) (= (car x) this))
                            (gethash target *rule-table*)))
-            (mapcar (lambda (d)
-                      (alexandria:flatten
-                       (mapcar (lambda (x)
-                                 (append
-                                  (car (find-path this d))
-                                  (cdr x))
-                                 x)
-                               (find-path d target))))
-                    cache))
+            (remove nil
+                    (mapcar (lambda (d)
+                              (alexandria:flatten
+                               (mapcar (lambda (x)
+                                         (append
+                                          (car (find-path this d))
+                                          (cdr x)))
+                                       (find-path d target))))
+                            cache)))
         '())))
 
+(defun update-target (this targets)
+  "targets (1 5) -> ((5 4 2 5)) add one dimension"
+  (if (/= this (car targets))
+      (mapcar
+       (lambda (d) (append d (cdr targets)))
+       (find-path this (car targets)))
+      (list targets)))
+
+(defun iter-step (l targets)
+  ;;(format t "~a~%~a~%" l targets)
+  (if (cond
+        ((and (not l) (not targets)) t)
+        ((or (not targets) (not l)) nil)
+        ((= (car l) (car targets))
+         (progn
+           (format t "this match: ~a ~a ~%" l targets)
+           (iter-step (cdr l) (cdr targets))))
+        (t
+         (let ((new-targetses (update-target (car l) targets)))
+           (if (not new-targetses)
+               nil
+               (find t (mapcar
+                        (lambda (d) (iter-step l d))
+                        new-targetses))))))
+      (progn (format t "~a~%~a~%" l targets)
+             t)
+      nil))
+
+(defun str-to-int (s a b)
+  (loop
+    with result = '()
+    for c across s
+    if (char= #\a c)
+      do (push a result)
+    else
+      do (push b result)
+    finally (return (reverse result))))
+
+(defun day19-p1-v2 ()
+  (let ((input (read-file-by-line "./day19.input"))
+        rule data)
+    (multiple-value-bind (*rule-table* *f-table* *s-table*)
+        (let ((split-it (split-sequence:split-sequence-if
+                         (lambda (s) (equal s "")) input)))
+          (setf rule (car split-it)
+                data (cadr split-it))
+          (parse-rule-p2 rule))
+      ;;(count-if (lambda (e) (iter-step (str-to-int e 1 14) '(0))) data)
+      (loop
+        for d in data
+        if (iter-step (str-to-int d 121 96) '(0))
+          collect d into rere
+        finally (return rere))
+      )))
+
+;;(iter-step (str-to-int e 121 96) '(0))
 
 ;; (defun day19-p2 ()
 ;;   (let ((input (read-file-by-line "./day19.input"))
