@@ -40,7 +40,7 @@
     
     ;;(format t "all allergens ~a~%" all-allergens)
     
-    (print
+    (print ;; part1 answer
      (length (loop
                for f in all-foods
                unless (member f all-allergens :test #'string=)
