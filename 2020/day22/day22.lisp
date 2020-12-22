@@ -35,15 +35,11 @@
     ))
 
 (defun count-it (a b)
-  (if a
-      (loop
-        for i from (length a) downto 1
-        for ind from 0
-        sum (* i (nth ind a)))
-      (loop
-        for i from (length b) downto 1
-        for ind from 0
-        sum (* i (nth ind b)))))
+  (let ((x (or a b)))
+    (loop
+      for i from (length x) downto 1
+      for ind from 0
+      sum (* i (nth ind x)))))
 
 (defun part1 ()
   (multiple-value-bind (a b)
@@ -53,14 +49,20 @@
 (defun game (p1 p2)
   (do ((a (car p1) (car p1))
        (b (car p2) (car p2))
+       (record '())
        (count 0))
       ((not (and a b)) (values p1 p2))
 
+    (if (member (list p1 p2) record :test #'equal)
+        (return-from game (values '(1) nil))
+        (push (list p1 p2) record))
+    
     (if (and (<= a (1- (length p1)))
              (<= b (1- (length p2)))
              )
         (multiple-value-bind (l1 l2) ;; length bind to a and b
-            (game (cdr p1) (cdr p2))
+            (game (subseq (cdr p1) 0 a)
+                  (subseq (cdr p2) 0 b))
           (setf a (length l1)
                 b (length l2))))
     
@@ -69,8 +71,7 @@
               p2 (cdr p2))
         (setf p2 (append (cdr p2) (list (car p2) (car p1)))
               p1 (cdr p1)))
-    )
-  )
+    ))
 
 (defun part2 ()
   (declare (optimize (speed 3) (safety 0)))
