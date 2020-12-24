@@ -44,11 +44,94 @@
       for tile in l
       for coor = (coordinate tile)
       if (member coor black :test #'equal)
-        do (delete coor black :test #'equal)
+        do (setf black (remove coor black :test #'equal))
         ;;and do (print "back")
       else
         do (push coor black)
       finally (return (length (remove '(0 0) black :test #'equal)))))) 
+
+(defun coordinate-2 (l)
+  (let ((x 0)
+        (y 0)
+        (z 0))
+    (loop for w in l
+          do (cond ((string= w "e")
+                    (incf x) (decf y))
+                   ((string= w "w")
+                    (decf x) (incf y))
+                   ((string= w "ne")
+                    (incf x) (decf z))
+                   ((string= w "nw")
+                    (decf z) (incf y))
+                   ((string= w "se")
+                    (incf z) (decf y))
+                   ((string= w "sw")
+                    (decf x) (incf z))
+                   ))
+    (list x y z)))
+
+(defun get-all-black (ls)
+  (loop
+    with black = '()
+    for tile in ls
+    for coor = (coordinate-2 tile)
+    if (member coor black :test #'equal)
+      do (setf black (remove coor black :test #'equal))
+    else
+      do (push coor black)
+    finally (return (remove '(0 0) black :test #'equal))))
+
+(defun around-this-tile-v2 (tile)
+  (loop for (x y z) in '((1 -1 0) (0 -1 1) (-1 0 1) (-1 1 0) (0 1 -1) (1 0 -1))
+        collect (list (+ x (car tile))
+                      (+ y (cadr tile))
+                      (+ z (caddr tile)))))
+
+(defun part2 ()
+  (let* ((input (mapcar #'parse-line
+                        (read-file-by-line "./day24.input")))
+         (all-b (get-all-black input))
+         (new-black '())
+         (check '()))
+    ;;(pprint (length all-b))
+    (dotimes (i 100)
+      (loop for tile in all-b
+            do (push tile check)
+            do (mapcar (lambda (x) (push x check))
+                       (around-this-tile-v2 tile))
+            finally (setf check (remove-duplicates check :test #'equal)))
+
+      ;;(print (length check))
+      ;;(pprint check)
+
+      (loop for (x y z) in check
+            for nbr = 0
+            do (dolist (dd '((1 -1 0) (0 -1 1) (-1 0 1) (-1 1 0) (0 1 -1) (1 0 -1)))
+                 (if (member (list (+ x (car dd))
+                                   (+ y (cadr dd))
+                                   (+ z (caddr dd)))
+                             all-b
+                             :test #'equal)
+                     (incf nbr)))
+            do  (cond ((and (member (list x y z) all-b :test #'equal)
+                            (or (= 1 nbr) (= 2 nbr)))
+                       (push (list x y z) new-black))
+                      ((and (not (member (list x y z) all-b :test #'equal)) (= 2 nbr))
+                       (push (list x y z) new-black))))
+
+      ;;(pprint new-black)
+      (setf all-b (remove-duplicates new-black :test #'equal)
+            new-black '()
+            check '()))
+    
+    (length all-b)))
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;; Trash below ;;;;;;;;
 
 (defun all-tiles (l)
   (let ((white '())
@@ -57,11 +140,12 @@
       for tile in l
       for coor = (coordinate tile)
       if (member coor black :test #'equal)
-        do (delete coor black :test #'equal)
+        do (setf black (remove coor black :test #'equal))
         and do (push coor white)
       else
         do (push coor black)
-        and do (delete coor white :test #'equal))
+        and do (setf black (remove coor white :test #'equal))
+      )
     
     (values white (remove '(0 0) black :test #'equal))))
 
@@ -127,84 +211,84 @@
         0)))
 
 
-(let* ((tiles (multiple-value-list
-               (all-tiles (mapcar #'parse-line (read-file-by-line "./day24.input")))))
-       (black (nth 1 tiles))
-       (white (nth 0 tiles))
-       (all (expand-all-tiles black white))
-       (new-black '())
-       (new-white '()))
-  ;;(format t "~a ~a ~a ~%" (length all) (length black) (length white))
-  (format t "~a~%~a~%"  black white)
-  (loop for tile in all
-        if (is-black tile black)
-          do (if (= 0 (rule1 tile black))
-                 (push tile new-white)
-                 (push tile new-black)
-                 )
-          and do (print tile)
-        else
-          do (if (= 1 (rule2 tile black))
-                 (push tile new-black)
-                 (push tile new-white)))
+;; (let* ((tiles (multiple-value-list
+;;                (all-tiles (mapcar #'parse-line (read-file-by-line "./day24.input")))))
+;;        (black (nth 1 tiles))
+;;        (white (nth 0 tiles))
+;;        (all (expand-all-tiles black white))
+;;        (new-black '())
+;;        (new-white '()))
+;;   ;;(format t "~a ~a ~a ~%" (length all) (length black) (length white))
+;;   (format t "~a~%~a~%"  black white)
+;;   (loop for tile in all
+;;         if (is-black tile black)
+;;           do (if (= 0 (rule1 tile black))
+;;                  (push tile new-white)
+;;                  (push tile new-black)
+;;                  )
+;;           and do (print tile)
+;;         else
+;;           do (if (= 1 (rule2 tile black))
+;;                  (push tile new-black)
+;;                  (push tile new-white)))
   
-  (pprint new-black))
+;;   (pprint new-black))
 
-(let* ((tiles (multiple-value-list
-               (all-tiles (mapcar #'parse-line (read-file-by-line "./day24.input")))))
-       (black (nth 1 tiles))
-       (white (nth 0 tiles))
-       (all (expand-all-tiles black white))
-       (new-black '())
-       (new-white '()))
+;; (let* ((tiles (multiple-value-list
+;;                (all-tiles (mapcar #'parse-line (read-file-by-line "./day24.input")))))
+;;        (black (nth 1 tiles))
+;;        (white (nth 0 tiles))
+;;        (all (expand-all-tiles black white))
+;;        (new-black '())
+;;        (new-white '()))
 
-  (dotimes (i 2)
-    (loop for tile in all
-          if (is-black tile black)
-            do (if (= 0 (rule1 tile black))
-                   (push tile new-white)
-                   (push tile new-black)
-                   )
-          else
-            do (if (= 1 (rule2 tile black))
-                   (push tile new-black)
-                   (push tile new-white)))
+;;   (dotimes (i 2)
+;;     (loop for tile in all
+;;           if (is-black tile black)
+;;             do (if (= 0 (rule1 tile black))
+;;                    (push tile new-white)
+;;                    (push tile new-black)
+;;                    )
+;;           else
+;;             do (if (= 1 (rule2 tile black))
+;;                    (push tile new-black)
+;;                    (push tile new-white)))
 
-    (setf black new-black
-          white new-white
-          all (expand-all-tiles black white)
-          new-black '()
-          new-white '()))
-  (length black))
+;;     (setf black new-black
+;;           white new-white
+;;           all (expand-all-tiles black white)
+;;           new-black '()
+;;           new-white '()))
+;;   (length black))
 
-(let* ((tiles (multiple-value-list
-               (all-tiles (mapcar #'parse-line (read-file-by-line "./day24.input")))))
-       (black (nth 1 tiles))
-       (white (nth 0 tiles))
-       ;;(all (expand-all-tiles black white))
-       (new-black '())
-       ;;(new-white '())
-       (check '()))
+;; (let* ((tiles (multiple-value-list
+;;                (all-tiles (mapcar #'parse-line (read-file-by-line "./day24.input")))))
+;;        (black (nth 1 tiles))
+;;        (white (nth 0 tiles))
+;;        ;;(all (expand-all-tiles black white))
+;;        (new-black '())
+;;        ;;(new-white '())
+;;        (check '()))
 
-  (dotimes (i 1)
-    (loop for tile in black
-          do (push tile check)
-          do (mapcar (lambda (x) (push x check))
-                     (around-this-tile tile))
-          finally (setf check (remove-duplicates check :test #'equal)))
+;;   (dotimes (i 1)
+;;     (loop for tile in black
+;;           do (push tile check)
+;;           do (mapcar (lambda (x) (push x check))
+;;                      (around-this-tile tile))
+;;           finally (setf check (remove-duplicates check :test #'equal)))
 
-    (print (length check))
+;;     (print (length check))
 
-    (loop for tile in check
-          if (is-black tile black)
-            do (if (= 1 (rule1 tile black))
-                   (push tile new-black)
-                   )
-          else
-            do (if (= 1 (rule2 tile black))
-                   (push tile new-black)))
+;;     (loop for tile in check
+;;           if (is-black tile black)
+;;             do (if (= 1 (rule1 tile black))
+;;                    (push tile new-black)
+;;                    )
+;;           else
+;;             do (if (= 1 (rule2 tile black))
+;;                    (push tile new-black)))
 
-    (setf black (remove-duplicates new-black :test #'equal)
-          new-black '()))
+;;     (setf black (remove-duplicates new-black :test #'equal)
+;;           new-black '()))
   
-  (length black))
+;;   (length black))
