@@ -1,0 +1,13 @@
+(defun find-loop-time (key subject)
+  (do ((lo 1 (1+ lo))
+       (cache subject))
+      ((= cache key) lo)
+    (setf cache (mod (* subject cache) 20201227))))
+
+(defun part1 (key1 key2)
+  (let ((l1 (find-loop-time key1 7))
+        (l2 (find-loop-time key2 7))
+        (re 1))
+    (dotimes (i l1)
+      (setf re (mod (* re key2) 20201227)))
+    re))
