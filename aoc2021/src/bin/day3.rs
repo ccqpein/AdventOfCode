@@ -1,3 +1,5 @@
+use tools::read_file_by_line;
+
 fn main() {
-    println!("day1");
+    println!("day3");
 }
