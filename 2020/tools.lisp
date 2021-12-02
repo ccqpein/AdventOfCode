@@ -10,9 +10,11 @@
       (push l result))))
 
 (defstruct (hash-set (:conc-name set-))
+  "hash set"
   (inner (make-hash-table :test 'equal) :type hash-table :read-only t))
 
 (defun set-insert (set &rest eles)
+  "insert elements inside hashset"
   (declare (hash-set set))
   (dolist (ele eles)
     (setf (gethash ele (set-inner set)) t)))
@@ -22,6 +24,8 @@
   (if (gethash ele (set-inner set)) ele nil))
 
 (defun list-of-sum-rest (l)
+  "give list and make a list which every elements are the
+all rest original elements sum"
   (loop
     with sum = 0
     for n in (reverse l)
@@ -56,10 +60,10 @@
     m
     ))
 
-(defmacro loop-array (dims syms &rest rest)
-  (if (not dims)
-      (cons 'progn rest)
-      (let ((xn (car dims)))
-        `(loop
-           for ,(car syms) from 0 below ,xn
-           do (loop-array ,(cdr dims) ,(cdr syms) ,@rest)))))
+;; (defmacro loop-array (dims syms &rest rest)
+;;   (if (not dims)
+;;       (cons 'progn rest)
+;;       (let ((xn (car dims)))
+;;         `(loop
+;;            for ,(car syms) from 0 below ,xn
+;;            do (loop-array ,(cdr dims) ,(cdr syms) ,@rest)))))
