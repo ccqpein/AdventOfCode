@@ -2,77 +2,6 @@ use std::collections::HashSet;
 
 use tools::*;
 
-fn part1(input: &Vec<String>) -> usize {
-    let command = input[0]
-        .split(',')
-        .map(|s| s.parse::<usize>().unwrap())
-        .collect::<Vec<usize>>();
-    //dbg!(&command);
-    let mut all_square = input[1..].chunks(6).collect::<Vec<_>>();
-    let mut all_square = all_square
-        .into_iter()
-        .map(|chunk| {
-            chunk
-                .iter()
-                .filter(|l| *l != "")
-                .map(|l| {
-                    l.split(|c| c == ' ')
-                        .filter(|s| *s != "")
-                        .map(|c| c.parse::<usize>().unwrap())
-                        .collect::<Vec<usize>>()
-                })
-                .collect::<Vec<Vec<usize>>>()
-        })
-        .collect::<Vec<Vec<Vec<usize>>>>();
-
-    //dbg!(&all_square.last().unwrap());
-
-    let mut all_board_set: Vec<HashSet<usize>> = vec![];
-    for chunk in &all_square {
-        all_board_set.push(chunk[0].iter().cloned().collect::<HashSet<_>>());
-        all_board_set.push(chunk[1].iter().cloned().collect::<HashSet<_>>());
-        all_board_set.push(chunk[2].iter().cloned().collect::<HashSet<_>>());
-        all_board_set.push(chunk[3].iter().cloned().collect::<HashSet<_>>());
-        all_board_set.push(chunk[4].iter().cloned().collect::<HashSet<_>>());
-        all_board_set.push(chunk.iter().map(|l| l[0]).collect());
-        all_board_set.push(chunk.iter().map(|l| l[1]).collect());
-        all_board_set.push(chunk.iter().map(|l| l[2]).collect());
-        all_board_set.push(chunk.iter().map(|l| l[3]).collect());
-        all_board_set.push(chunk.iter().map(|l| l[4]).collect());
-    }
-    //dbg!(&all_square);
-    let mut last: HashSet<usize> = HashSet::new();
-    for this in command {
-        last.insert(this);
-        let mut temp = 0;
-        for (ind, set) in all_board_set.iter().enumerate() {
-            if set.difference(&last).count() == 0 {
-                dbg!(set);
-                //dbg!(&last);
-                let number = (ind / 10) as usize;
-
-                dbg!(&all_square[number]);
-                temp += all_square[number]
-                    .iter()
-                    .map(|l| {
-                        let a = l.iter().filter(|c| !last.contains(c)).sum::<usize>();
-                        println!("{}", a);
-                        a
-                    })
-                    .sum::<usize>();
-
-                dbg!(&temp);
-                //return set.iter().map(|x| *x).sum::<usize>() * this;
-            }
-        }
-        if temp != 0 {
-            return temp * this;
-        }
-    }
-
-    0
-}
-
 struct Squid {
     is_win: bool,
     all_elements: Vec<HashSet<usize>>,
@@ -115,15 +44,14 @@ impl Squid {
     }
 }
 
-fn part2(input: &Vec<String>) -> usize {
+fn part1(input: &Vec<String>) -> usize {
     let command = input[0]
         .split(',')
         .map(|s| s.parse::<usize>().unwrap())
         .collect::<Vec<usize>>();
     //dbg!(&command);
-    let mut all_square = input[1..].chunks(6).collect::<Vec<_>>();
-    let mut all_square = all_square
-        .into_iter()
+    let mut all_square: Vec<Squid> = input[1..]
+        .chunks(6)
         .map(|chunk| {
             chunk
                 .iter()
@@ -136,9 +64,46 @@ fn part2(input: &Vec<String>) -> usize {
                 })
                 .collect::<Vec<Vec<usize>>>()
         })
-        .collect::<Vec<Vec<Vec<usize>>>>();
+        .map(|chunk| Squid::new(&chunk))
+        .collect();
 
-    let mut all_square: Vec<Squid> = all_square.iter().map(|chunk| Squid::new(chunk)).collect();
+    //-----------------------
+
+    let mut last: HashSet<usize> = HashSet::new();
+    for this in command {
+        last.insert(this);
+        for sq in all_square.as_mut_slice() {
+            if sq.is_win(&last) {
+                return sq.all_unmark_value(&last).sum::<usize>() * this;
+            }
+        }
+    }
+
+    0
+}
+
+fn part2(input: &Vec<String>) -> usize {
+    let command = input[0]
+        .split(',')
+        .map(|s| s.parse::<usize>().unwrap())
+        .collect::<Vec<usize>>();
+    //dbg!(&command);
+    let mut all_square: Vec<Squid> = input[1..]
+        .chunks(6)
+        .map(|chunk| {
+            chunk
+                .iter()
+                .filter(|l| *l != "")
+                .map(|l| {
+                    l.split(|c| c == ' ')
+                        .filter(|s| *s != "")
+                        .map(|c| c.parse::<usize>().unwrap())
+                        .collect::<Vec<usize>>()
+                })
+                .collect::<Vec<Vec<usize>>>()
+        })
+        .map(|chunk| Squid::new(&chunk))
+        .collect();
 
     //----
 
@@ -165,6 +130,6 @@ fn part2(input: &Vec<String>) -> usize {
 fn main() {
     let input = read_file_by_line("./src/bin/day4/day4.input");
     //let input = read_file_by_line("./src/bin/day4/day4_demo.input");
-    //println!("{}", part1(&input));
+    println!("{}", part1(&input));
     println!("{}", part2(&input));
 }
