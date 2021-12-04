@@ -3,11 +3,8 @@
 
 (defun read-file-by-line (filepath)
   "read file line by line, return a list of file"
-  (with-open-file (s filepath :direction :input)
-    (do ((l (read-line s) (read-line s nil 'eof))
-         (result '()))
-        ((eq l 'eof) (reverse result))
-      (push l result))))
+  (uiop:read-file-lines filepath)
+  )
 
 (defstruct (hash-set (:conc-name set-))
   "hash set"
@@ -22,6 +19,23 @@
 (defun set-get (set ele)
   (declare (hash-set set))
   (if (gethash ele (set-inner set)) ele nil))
+
+(defun hash-set-difference (set other)
+  "return set - other"
+  (loop for k being the hash-keys of (set-inner set)
+        if (not (gethash k (set-inner other)))
+          collect k))
+
+(defun make-hash-set-from-list (l)
+  "as the function name says"
+  (let ((s (make-hash-set)))
+    (apply #'set-insert s l)
+    s))
+
+(defun set-to-list (set)
+  "as the function name say"
+  (loop for k being the hash-keys of (set-inner set)
+        collect k))
 
 (defun list-of-sum-rest (l)
   "give list and make a list which every elements are the
