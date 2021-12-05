@@ -23,7 +23,7 @@ fn part1(input: &Vec<String>) {
         }
     }
 
-    println!("{}", forward * &depth)
+    println!("{}", forward * depth)
 }
 
 fn part2(input: &Vec<String>) {
@@ -49,7 +49,7 @@ fn part2(input: &Vec<String>) {
         }
     }
 
-    println!("{}", forward * &depth)
+    println!("{}", forward * depth)
 }
 
 fn main() {
