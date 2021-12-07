@@ -8,7 +8,6 @@ fn part1(input: &Vec<String>) -> i32 {
 
     content.sort();
     let mut result = i32::MAX;
-    //let mut step = ;
     for d in 0..*content.last().unwrap() as usize {
         let temp = content.iter().map(|e| (*e - d as i32).abs()).sum::<i32>();
         if temp < result {
