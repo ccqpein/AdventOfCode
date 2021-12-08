@@ -45,6 +45,17 @@
            (loop for k being the hash-keys of (set-inner set)
                  collect k))))
 
+(defun set-count (set)
+  (hash-table-count (set-inner set)))
+
+(defun set-same (set other)
+  (and (= (set-count set)
+          (set-count other))
+       (loop for k being the hash-keys of (set-inner set)
+             when (not (gethash k (set-inner other)))
+               return nil
+             finally (return t))))
+
 (defun list-of-sum-rest (l)
   "give list and make a list which every elements are the
 all rest original elements sum"
