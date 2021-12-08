@@ -11,7 +11,7 @@
   (inner (make-hash-table :test 'equal) :type hash-table :read-only t))
 
 (defun set-insert (set &rest eles)
-  "insert elements inside hashset"
+  "insert elements inside hashset, side effect: change the set"
   (declare (hash-set set))
   (dolist (ele eles)
     (setf (gethash ele (set-inner set)) t)))
@@ -21,7 +21,7 @@
   (if (gethash ele (set-inner set)) ele nil))
 
 (defun hash-set-difference (set other)
-  "return set - other"
+  "return set - other list"
   (loop for k being the hash-keys of (set-inner set)
         if (not (gethash k (set-inner other)))
           collect k))
@@ -36,6 +36,14 @@
   "as the function name say"
   (loop for k being the hash-keys of (set-inner set)
         collect k))
+
+(defun set-union (set other)
+  "union sets, return new set"
+  (make-hash-set-from-list
+   (append (loop for k being the hash-keys of (set-inner other)
+                 collect k)
+           (loop for k being the hash-keys of (set-inner set)
+                 collect k))))
 
 (defun list-of-sum-rest (l)
   "give list and make a list which every elements are the
