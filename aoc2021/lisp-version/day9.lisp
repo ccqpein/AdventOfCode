@@ -1,0 +1,60 @@
+(load "../../2020/tools.lisp")
+
+(defun arefl (l coorp)
+  (loop for i in coorp when (or (< i 0) (> i (length l))) return nil do (setf l (nth i l))
+    finally (return l)))
+
+(defun all (condition l)
+  (loop for e in l unless (funcall condition e) return nil
+        finally (return t)))
+
+(defun part1 (path)
+  (let* ((content (mapcar (lambda (l) (concatenate 'list l)) (read-file-by-line path)))
+         (content-num (loop for l in content collect (mapcar #'digit-char-p l))))
+    (let ((midd-cache
+            (loop for i from 0 below (length content-num)
+                  collect (loop for j from 0 below (length (car content-num))
+                                for this = (arefl content-num (list i j))
+                                collect (loop for neighbour in (list (list i (1- j))
+                                                                     (list (1- i) j)
+                                                                     (list (1+ i) j)
+                                                                     (list i (1+ j)))
+                                              collect (arefl content-num neighbour) into result
+                                              finally (return
+                                                        (if (all (lambda (e) (if e (> e this) t)) result)
+                                                            this
+                                                            nil)
+                                                        ))))))
+      (apply #'+ (mapcar #'1+ (alexandria:flatten midd-cache))))))
+
+(defun part2 (path)
+  (let* ((content (mapcar (lambda (l) (concatenate 'list l)) (read-file-by-line path)))
+         (content-num (loop for l in content collect (mapcar #'digit-char-p l))))
+    (let ((midd-cache (loop for i from 0 below (length content-num)
+                            collect (loop for j from 0 below (length (car content-num))
+                                          for this = (arefl content-num (list i j))
+                                          if (all (lambda (e) (if e (> e this) t))
+                                                  (loop for neighbour in (list (list i (1- j))
+                                                                               (list (1- i) j)
+                                                                               (list (1+ i) j)
+                                                                               (list i (1+ j)))
+                                                        collect (arefl content-num neighbour)))
+                                            collect (let ((s (make-hash-set)))
+                                                      (set-insert s (list i j))
+                                                      (helper this (list i j) s content-num)
+                                                      (set-count s)
+                                                      )))))
+      (apply #'* (subseq (sort (alexandria:flatten midd-cache) #'>) 0 3)))))
+
+(defun helper (this coorp record content-num)
+  (let ((cache (loop with i = (car coorp) and j = (cadr coorp)
+                     for neighbour in (list (list i (1- j))
+                                            (list (1- i) j)
+                                            (list (1+ i) j)
+                                            (list i (1+ j)))
+                     when (arefl content-num neighbour)
+                       collect (list neighbour (arefl content-num neighbour)))))
+    (loop for (neighbour v) in cache
+          do (if (and (> v this) (/= v 9) (not (set-get record neighbour)))
+                 (progn (set-insert record neighbour)
+                        (helper v neighbour record content-num))))))
