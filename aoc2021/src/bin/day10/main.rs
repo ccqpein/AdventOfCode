@@ -31,19 +31,19 @@ fn part1(input: &Vec<String>) -> i32 {
         let mut lc = l.chars();
         for c in lc {
             match c {
-                a @ '[' | a @ '(' | a @ '{' | a @ '<' => {
-                    stack.push(a);
+                '[' | '(' | '{' | '<' => {
+                    stack.push(c);
                 }
-                a @ ']' | a @ ')' | a @ '}' | a @ '>' => {
+                ']' | ')' | '}' | '>' => {
                     if let Some(b) = stack.last() {
-                        if *b == shouldbe(a) {
+                        if *b == shouldbe(c) {
                             stack.pop();
                         } else {
-                            result += point(a);
+                            result += point(c);
                             break;
                         }
                     } else {
-                        result += point(a);
+                        result += point(c);
                         break;
                     }
                 }
@@ -80,12 +80,12 @@ fn part2(input: &Vec<String>) -> usize {
         let mut lc = l.chars();
         for c in lc {
             match c {
-                a @ '[' | a @ '(' | a @ '{' | a @ '<' => {
-                    stack.push(a);
+                '[' | '(' | '{' | '<' => {
+                    stack.push(c);
                 }
-                a @ ']' | a @ ')' | a @ '}' | a @ '>' => {
+                ']' | ')' | '}' | '>' => {
                     if let Some(b) = stack.last() {
-                        if *b == shouldbe(a) {
+                        if *b == shouldbe(c) {
                             stack.pop();
                         } else {
                             continue 'line;
