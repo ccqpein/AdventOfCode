@@ -93,6 +93,22 @@ all rest original elements sum"
     m
     ))
 
+(defun nth-nest (l coorp)
+  (loop for i in coorp when (or (< i 0) (> i (length l))) return nil do (setf l (nth i l))
+        finally (return l)))
+
+;;:= need learn how to do this
+;; (defsetf nth-nest (l coorp) (new-value)
+;;   ;;`(set-nth-nest ,l ,coorp ,new-value)
+;;   (print coorp)
+;;   (let ((inner-coorp (eval coorp)))
+;;     `(setf ,(loop
+;;               for i in inner-coorp
+;;               do (setf l `(nth ,i ,l))
+;;               finally (return l))
+;;            ,new-value)))
+;;   )
+
 ;; (defmacro loop-array (dims syms &rest rest)
 ;;   (if (not dims)
 ;;       (cons 'progn rest)
