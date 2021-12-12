@@ -6,9 +6,13 @@
   (uiop:read-file-lines filepath)
   )
 
-(defstruct (hash-set (:conc-name set-))
+(defstruct (hash-set (:conc-name set-)
+                     (:copier copy-hash-set))
   "hash set"
   (inner (make-hash-table :test 'equal) :type hash-table :read-only t))
+
+(defun copy-hash-set (set)
+  (make-hash-set :inner (alexandria:copy-hash-table (set-inner set) :test 'equal)))
 
 (defun set-insert (set &rest eles)
   "insert elements inside hashset, side effect: change the set"
