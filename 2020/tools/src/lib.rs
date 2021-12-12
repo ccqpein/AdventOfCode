@@ -6,6 +6,8 @@ use std::path::Path;
 mod maps;
 mod stack_machine;
 
+pub use maps::*;
+
 /// read file line by line
 pub fn read_file_by_line(filepath: impl AsRef<Path>) -> Vec<String> {
     let file = File::open(filepath).unwrap();

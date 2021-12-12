@@ -1,4 +1,3 @@
-//:= TODO: Map iter around
 pub struct Map<T> {
     /// total length of row and col
     r_len: usize,
@@ -7,7 +6,7 @@ pub struct Map<T> {
     inner: Vec<Vec<T>>,
 }
 
-impl<T> Map<T> {
+impl<T: Clone> Map<T> {
     fn new() -> Self {
         Self {
             r_len: 0,
@@ -16,21 +15,79 @@ impl<T> Map<T> {
         }
     }
 
-    fn iter(&self) -> MapIter<'_, T> {
+    pub fn iter(&self) -> MapIter<'_, T> {
         MapIter::new(self)
     }
 
-    fn get_mut(&mut self, r: usize, c: usize) -> Option<&mut T> {
+    pub fn get_mut(&mut self, r: usize, c: usize) -> Option<&mut T> {
         self.inner.get_mut(r)?.get_mut(c)
     }
 
-    fn iter_mut(&mut self) -> MapIterMut<'_, T> {
+    pub fn iter_mut(&mut self) -> MapIterMut<'_, T> {
         MapIterMut::new(self)
     }
+
+    //:= need test
+    pub fn get_around(&self, (r, c): (usize, usize)) -> Vec<((usize, usize), T)> {
+        let (r, c) = (r as isize, c as isize);
+        [
+            (r - 1, c - 1),
+            (r - 1, c),
+            (r - 1, c + 1),
+            (r, c - 1),
+            (r, c + 1),
+            (r + 1, c - 1),
+            (r + 1, c),
+            (r + 1, c + 1),
+        ]
+        .iter()
+        .filter_map(|(r, c)| {
+            if *r < 0 || *c < 0 || *r >= self.r_len as isize || *c >= self.c_len as isize {
+                None
+            } else {
+                Some((
+                    (*r as usize, *c as usize),
+                    self.inner[*r as usize][*c as usize].clone(),
+                ))
+            }
+        })
+        .collect()
+    }
+
+    //:= stop here
+    // fn get_around_mut<'a, 's: 'a>(
+    //     &'s mut self,
+    //     (r, c): (usize, usize),
+    // ) -> Vec<((usize, usize), &'s mut T)> {
+    //     let (r, c) = (r as isize, c as isize);
+    //     [
+    //         (r - 1, c - 1),
+    //         (r - 1, c),
+    //         (r - 1, c + 1),
+    //         (r, c - 1),
+    //         (r, c + 1),
+    //         (r + 1, c - 1),
+    //         (r + 1, c),
+    //         (r + 1, c + 1),
+    //     ]
+    //     .into_iter()
+    //     .filter_map(|(r, c)| {
+    //         if r < 0 || c < 0 || r >= self.r_len as isize || c >= self.c_len as isize {
+    //             None
+    //         } else {
+    //             Some((
+    //                 (r as usize, c as usize),
+    //                 //&self.inner[r as usize][c as usize],
+    //                 self.get_mut(r as usize, c as usize).unwrap(),
+    //             ))
+    //         }
+    //     })
+    //     .collect()
+    // }
 }
 
-impl<'a, T> IntoIterator for &'a Map<T> {
-    type Item = &'a T;
+impl<'a, T: Clone> IntoIterator for &'a Map<T> {
+    type Item = ((usize, usize), &'a T);
     type IntoIter = MapIter<'a, T>;
 
     fn into_iter(self) -> MapIter<'a, T> {
@@ -38,8 +95,8 @@ impl<'a, T> IntoIterator for &'a Map<T> {
     }
 }
 
-impl<'a, T> IntoIterator for &'a mut Map<T> {
-    type Item = &'a mut T;
+impl<'a, T: Clone> IntoIterator for &'a mut Map<T> {
+    type Item = ((usize, usize), &'a mut T);
     type IntoIter = MapIterMut<'a, T>;
 
     fn into_iter(self) -> MapIterMut<'a, T> {
@@ -78,7 +135,7 @@ impl<'a, T> MapIter<'a, T> {
 }
 
 impl<'a, T> Iterator for MapIter<'a, T> {
-    type Item = &'a T;
+    type Item = ((usize, usize), &'a T);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.c_offset == self.map.c_len {
@@ -90,7 +147,10 @@ impl<'a, T> Iterator for MapIter<'a, T> {
             return None;
         }
 
-        let a = Some(&self.map.inner[self.r_offset][self.c_offset]);
+        let a = Some((
+            (self.r_offset, self.c_offset),
+            &self.map.inner[self.r_offset][self.c_offset],
+        ));
         self.c_offset += 1;
         a
     }
@@ -117,7 +177,7 @@ impl<'a, T> MapIterMut<'a, T> {
 }
 
 impl<'a, T> Iterator for MapIterMut<'a, T> {
-    type Item = &'a mut T;
+    type Item = ((usize, usize), &'a mut T);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.c_offset == self.map.c_len {
@@ -130,39 +190,43 @@ impl<'a, T> Iterator for MapIterMut<'a, T> {
         }
 
         // unsafe here
-        let a = unsafe {
+        let result = match unsafe {
             let a = &mut self.map.inner;
             let r = &mut *a.as_mut_ptr().add(self.r_offset) as &mut Vec<T>;
             r.as_mut_ptr().add(self.c_offset).as_mut()
+        } {
+            Some(a) => Some(((self.r_offset, self.c_offset), a)),
+            None => {
+                panic!()
+            }
         };
 
         self.c_offset += 1;
-        a
+        result
     }
 }
 
-struct MapIterScope<'a, T: 'a> {
-    /// offsets are where is this map during iter
-    r_offset: usize,
-    c_offset: usize,
+// struct MapIterScope<'a, T: 'a> {
+//     /// offsets are where is this map during iter
+//     r_offset: usize,
+//     c_offset: usize,
 
-    scope: isize,
+//     scope: isize,
 
-    map: &'a Map<T>,
-}
+//     map: &'a Map<T>,
+// }
 
-impl<'a, T> MapIterScope<'a, T> {
-    fn new(m: &'a Map<T>) -> Self {
-        Self {
-            r_offset: 0,
-            c_offset: 0,
-            scope: 0,
-            map: m,
-        }
-    }
-}
+// impl<'a, T> MapIterScope<'a, T> {
+//     fn new(m: &'a Map<T>) -> Self {
+//         Self {
+//             r_offset: 0,
+//             c_offset: 0,
+//             scope: 0,
+//             map: m,
+//         }
+//     }
+// }
 
-//:= TODO: stop here
 // impl<'a, T> Iterator for MapIterScope<'a, T> {
 //     type Item = &'a T;
 
@@ -182,18 +246,18 @@ mod tests {
     #[test]
     fn map_test() {
         let mut m = Map::from(vec![vec![1, 2, 3], vec![1, 2, 3]]);
-        for i in &m {
+        for (i, v) in &m {
             println!("{:?}", i);
         }
 
-        for i in &mut m {
-            *i += 1;
-            print_type_of(i);
+        for (i, v) in &mut m {
+            *v += 1;
+            //print_type_of(i);
         }
 
-        for i in &m {
-            print_type_of(i);
-            println!("{:?}", i);
+        for (i, v) in &m {
+            //print_type_of(i);
+            println!("{:?}", v);
         }
 
         *m.get_mut(0, 0).unwrap() += 1;
@@ -206,7 +270,7 @@ mod tests {
         }
 
         for i in &mut v {
-            print_type_of(i);
+            //print_type_of(i);
         }
     }
 }
