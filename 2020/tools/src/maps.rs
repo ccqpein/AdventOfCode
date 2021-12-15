@@ -15,6 +15,18 @@ impl<T: Clone> Map<T> {
         }
     }
 
+    pub fn get(&self, (x, y): (usize, usize)) -> Option<T> {
+        if let Some(r) = self.inner.get(x) {
+            if let Some(c) = r.get(y) {
+                Some(c.clone())
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
     pub fn iter(&self) -> MapIter<'_, T> {
         MapIter::new(self)
     }
@@ -52,6 +64,23 @@ impl<T: Clone> Map<T> {
             }
         })
         .collect()
+    }
+
+    pub fn get_around_horiz(&self, (r, c): (usize, usize)) -> Vec<((usize, usize), T)> {
+        let (r, c) = (r as isize, c as isize);
+        [(r - 1, c), (r, c - 1), (r, c + 1), (r + 1, c)]
+            .iter()
+            .filter_map(|(r, c)| {
+                if *r < 0 || *c < 0 || *r >= self.r_len as isize || *c >= self.c_len as isize {
+                    None
+                } else {
+                    Some((
+                        (*r as usize, *c as usize),
+                        self.inner[*r as usize][*c as usize].clone(),
+                    ))
+                }
+            })
+            .collect()
     }
 
     //:= stop here
