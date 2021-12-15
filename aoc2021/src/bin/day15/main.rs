@@ -1,4 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{BinaryHeap, HashMap, HashSet},
+    time,
+};
 
 use tools::*;
 
@@ -96,10 +99,10 @@ fn helper_v3(m: &Map<i32>, start: (usize, usize), end: (usize, usize)) -> i32 {
         if let Some(v) = record.get(&end) {
             return *v;
         }
-        let this_v = record.get(&this).cloned().unwrap();
+        let this_v = record.get(&this).unwrap().clone();
         let next_round = m.get_around_horiz(this);
 
-        for p in next_round.clone() {
+        for p in next_round {
             if !already.contains(&p.0) {
                 match record.get(&p.0) {
                     Some(old_v) => {
@@ -123,9 +126,8 @@ fn helper_v3(m: &Map<i32>, start: (usize, usize), end: (usize, usize)) -> i32 {
         // sort cache
         cache.sort_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap());
         cache = cache
-            .iter()
+            .into_iter()
             .filter(|(coorp, _)| !already.contains(coorp))
-            .cloned()
             .collect();
 
         this = if let Some(aa) = cache.get(0) {
@@ -154,7 +156,14 @@ fn part2(input: &Vec<String>) -> i32 {
     let end = (cache.len() - 1, cache[0].len() - 1);
 
     dbg!(end);
-    helper_v3(&map, (0, 0), end)
+
+    //helper_v3(&map, (0, 0), end) // about 120s
+
+    helper_v4(&map, (0, 0), end) // about 1.3s
+
+    //helper_v5(&map, (0, 0), end) // about 17s after optimize
+
+    //helper_v6(&cache) // about 12s
 }
 
 fn dup_line(mut l: Vec<i32>) -> Vec<i32> {
@@ -192,6 +201,108 @@ fn dup_block(mut ll: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
     ll.append(&mut c);
     ll.append(&mut d);
     ll
+}
+
+fn helper_v4(m: &Map<i32>, start: (usize, usize), end: (usize, usize)) -> i32 {
+    let mut pg = BinaryHeap::new();
+    let mut already = HashSet::new();
+    already.insert(start);
+    pg.push((0, start));
+
+    let mut step = 0;
+    while let Some((risk, (x, y))) = pg.pop() {
+        step += 1;
+        if end == (x, y) {
+            println!("use {} steps", step);
+            return -risk;
+        }
+        for ((nx, ny), v) in m.get_around_horiz((x, y)) {
+            if !already.contains(&(nx, ny)) {
+                already.insert((nx, ny));
+                pg.push((risk - v, (nx, ny)));
+            }
+        }
+    }
+    0
+}
+
+fn helper_v5(m: &Map<i32>, start: (usize, usize), end: (usize, usize)) -> i32 {
+    let time_stamp = time::Instant::now();
+    let mut done = false;
+
+    let (x, y) = (end.0 + 1, end.1 + 1);
+    let mut dists = vec![vec![i32::MAX; y]; x];
+
+    dists[0][0] = 0;
+
+    println!("after init: {}", time_stamp.elapsed().as_micros());
+
+    let mut step = 0;
+    while !done {
+        step += 1;
+        done = true;
+
+        for r in 0..=end.0 {
+            for c in 0..=end.1 {
+                let current_risk = dists[r][c];
+                for ((nx, ny), v) in m.get_around_horiz((r, c)) {
+                    if dists[nx][ny] > current_risk + v {
+                        done = false;
+                        dists[nx][ny] = current_risk + v
+                    }
+                }
+            }
+        }
+        println!("after step {}: {}", step, time_stamp.elapsed().as_micros());
+    }
+    println!("done: {}", time_stamp.elapsed().as_micros());
+    println!("use {} steps", step);
+    dists[end.0][end.1]
+}
+
+const NEIGHBORS: [(i32, i32); 4] = [(1, 0), (-1, 0), (0, 1), (0, -1)];
+
+fn helper_v6(grid: &Vec<Vec<i32>>) -> i32 {
+    let time_stamp = time::Instant::now();
+    let m = grid.len();
+    let n = grid[0].len();
+
+    let mut dists = vec![vec![i32::MAX; n]; m];
+
+    dists[0][0] = 0;
+    println!("after init: {}", time_stamp.elapsed().as_micros());
+    let m = m as i32;
+    let n = n as i32;
+    let mut done = false;
+
+    let mut loops = 0;
+    while !done {
+        loops += 1;
+        done = true;
+        for i in 0..m {
+            for j in 0..n {
+                let current_risk = dists[i as usize][j as usize];
+
+                let (row, col) = (i as i32, j as i32);
+                for (dr, dc) in NEIGHBORS.iter() {
+                    let (newr, newc) = (row + dr, col + dc);
+                    if newr >= 0 && newr < m && newc >= 0 && newc < n {
+                        if dists[newr as usize][newc as usize]
+                            > current_risk + grid[newr as usize][newc as usize]
+                        {
+                            done = false;
+                            dists[newr as usize][newc as usize] =
+                                current_risk + grid[newr as usize][newc as usize];
+                        }
+                    }
+                }
+            }
+        }
+        println!("after step {}: {}", loops, time_stamp.elapsed().as_micros());
+    }
+
+    println!("loops: {}", loops);
+    dists[m as usize - 1][n as usize - 1]
 }
 
 fn main() {

@@ -39,8 +39,10 @@ impl<T: Clone> Map<T> {
         MapIterMut::new(self)
     }
 
-    //:= need test
-    pub fn get_around(&self, (r, c): (usize, usize)) -> Vec<((usize, usize), T)> {
+    pub fn get_around(
+        &self,
+        (r, c): (usize, usize),
+    ) -> impl Iterator<Item = ((usize, usize), T)> + '_ {
         let (r, c) = (r as isize, c as isize);
         [
             (r - 1, c - 1),
@@ -52,35 +54,36 @@ impl<T: Clone> Map<T> {
             (r + 1, c),
             (r + 1, c + 1),
         ]
-        .iter()
+        .into_iter()
         .filter_map(|(r, c)| {
-            if *r < 0 || *c < 0 || *r >= self.r_len as isize || *c >= self.c_len as isize {
+            if r < 0 || c < 0 || r as usize >= self.r_len || c as usize >= self.c_len {
                 None
             } else {
                 Some((
-                    (*r as usize, *c as usize),
-                    self.inner[*r as usize][*c as usize].clone(),
+                    (r as usize, c as usize),
+                    self.inner[r as usize][c as usize].clone(),
                 ))
             }
         })
-        .collect()
     }
 
-    pub fn get_around_horiz(&self, (r, c): (usize, usize)) -> Vec<((usize, usize), T)> {
+    pub fn get_around_horiz(
+        &self,
+        (r, c): (usize, usize),
+    ) -> impl Iterator<Item = ((usize, usize), T)> + '_ {
         let (r, c) = (r as isize, c as isize);
         [(r - 1, c), (r, c - 1), (r, c + 1), (r + 1, c)]
-            .iter()
+            .into_iter()
             .filter_map(|(r, c)| {
-                if *r < 0 || *c < 0 || *r >= self.r_len as isize || *c >= self.c_len as isize {
-                    None
-                } else {
+                if r >= 0 && c >= 0 && (r as usize) < self.r_len && (c as usize) < self.c_len {
                     Some((
-                        (*r as usize, *c as usize),
-                        self.inner[*r as usize][*c as usize].clone(),
+                        (r as usize, c as usize),
+                        self.inner[r as usize][c as usize].clone(),
                     ))
+                } else {
+                    None
                 }
             })
-            .collect()
     }
 
     //:= stop here
