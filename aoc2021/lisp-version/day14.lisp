@@ -10,7 +10,7 @@
                               (elt (cadr a) 0)))))))
     (let ((counts (make-hash-table :test 'equal))
           (pairs (make-hash-table :test 'equal)))
-      (loop for c across template do (setf (gethash c counts) (1+ (gethash c counts 0))))
+      (loop for c across template do (incf (gethash c counts 0)))
 
       (loop
         with chars-temp = (concatenate 'list template)
@@ -28,9 +28,11 @@
                      for (a b) being the hash-keys of pairs
                        using (hash-value count)
                      for c = (gethash (list a b) all-map)
-                     do (setf (gethash c counts) (+ count (gethash c counts 0))
-                              (gethash (list a c) new-pairs) (+ count (gethash (list a c) new-pairs 0))
-                              (gethash (list c b) new-pairs) (+ count (gethash (list c b) new-pairs 0)))
+                     do (progn
+                          (incf (gethash c counts 0) count)
+                          (incf (gethash (list a c) new-pairs 0) count)
+                          (incf (gethash (list c b) new-pairs 0) count)
+                          )
                      finally (setf pairs new-pairs)))
 
       (let ((all-values (loop for v being the hash-values of counts collect v)))
