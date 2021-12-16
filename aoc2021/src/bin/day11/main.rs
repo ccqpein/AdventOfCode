@@ -96,7 +96,7 @@ fn adjust_energy_v2(m: &mut Map<usize>) {
             }
         }
         for center in this_round_cache {
-            for ((r, c), v) in m.get_around(center) {
+            for ((r, c), v) in m.get_around(center).collect::<Vec<_>>() {
                 if v != 0 {
                     *m.get_mut(r, c).unwrap() += 1;
                 }
