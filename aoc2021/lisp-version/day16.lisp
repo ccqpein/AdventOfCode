@@ -6,26 +6,6 @@
   literal-value
   sub-packets)
 
-(defun hex-parse (l)
-  (apply #'str:concat
-         (loop
-           for c across l
-           collect (str:pad 4 (write-to-string (parse-integer (string c)
-                                                              :radix 16)
-                                               :base 2)
-                            :pad-side :left
-                            :pad-char #\0))))
-
-(defun day16 (path)
-  (let ((content (read-file-by-line path)))
-    (loop for l in content
-          ;;do (print (make-packet-from-input (hex-parse l)))
-          ;;do (format t "this input ~a~%" l)
-          ;;do (format t "~a~%" (make-packet-from-input (hex-parse l)))
-          do (format t "part1: ~a~%" (part1 (make-packet-from-input (hex-parse l)))))
-    ))
-
-
 (defun make-packet-from-input (input)
   (let ((version (str:substring 0 3 input))
         (type-id (str:substring 3 6 input))
@@ -33,7 +13,6 @@
         (sub-packets '())
         )
     (setf input (subseq input 6))
-    ;;(format t "version: ~a, type-id: ~a, rest input: ~a~%" version type-id input)
     (setf literal-value
           (if (string= type-id "100")
               (loop
@@ -54,9 +33,6 @@
                            target-len)
                       (setf input (subseq input 15)
                             target-len (- (length input) next-p-length))
-                      (format t "need ~a length packet~%" next-p-length)
-                      ;;(format t "length now ~a~%" (length input))
-                      ;;(format t "target length ~a~%" target-len)
                       (loop
                         for this-len = (length input)
                         while (/= this-len target-len)
@@ -68,7 +44,6 @@
                         ))
                     (let ((next-p-num (parse-integer (str:substring 0 11 input) :radix 2)))
                       (setf input (subseq input 11))
-                      (format t "need ~a packet~%" next-p-num)
                       (loop repeat next-p-num
                             do (multiple-value-bind (pkg new-input)
                                    (make-packet-from-input input)
@@ -79,9 +54,26 @@
              :version version
              :type-id type-id
              :literal-value literal-value
-             :sub-packets sub-packets
+             :sub-packets (reverse sub-packets)
              )
             input)))
+
+(defun hex-parse (l)
+  (apply #'str:concat
+         (loop
+           for c across l
+           collect (str:pad 4 (write-to-string (parse-integer (string c)
+                                                              :radix 16)
+                                               :base 2)
+                            :pad-side :left
+                            :pad-char #\0))))
+
+(defun day16 (path)
+  (let ((content (read-file-by-line path)))
+    (loop for l in content
+          do (format t "part1: ~a~%" (part1 (make-packet-from-input (hex-parse l))))
+          do (format t "part2: ~a~%" (part2 (make-packet-from-input (hex-parse l)))))
+    ))
 
 (defun part1 (pa)
   (+ (parse-integer (packet-version pa) :radix 2)
@@ -89,15 +81,22 @@
            sum (part1 p)))
   )
 
-;;:= TODO
 (defun part2 (pa)
-  (case (packet-type-id pa)
-    ("000")
-    ("001")
-    ("010")
-    ("011")
-    ("100")
-    ("101")
-    ("110")
-    ("111")))
+  (cond 
+    ((string= (packet-type-id pa) "000")
+     (apply #'+ (mapcar #'part2 (packet-sub-packets pa))))
+    ((string= "001" (packet-type-id pa))
+     (apply #'* (mapcar #'part2 (packet-sub-packets pa))))
+    ((string= "010" (packet-type-id pa))
+     (apply #'min (mapcar #'part2 (packet-sub-packets pa))))
+    ((string= "011" (packet-type-id pa))
+     (apply #'max (mapcar #'part2 (packet-sub-packets pa))))
+    ((string= "100" (packet-type-id pa))
+     (packet-literal-value pa))
+    ((string= "101" (packet-type-id pa))
+     (apply (lambda (a b) (if (> (part2 a) (part2 b)) 1 0)) (packet-sub-packets pa)))
+    ((string= "110" (packet-type-id pa))
+     (apply (lambda (a b) (if (< (part2 a) (part2 b)) 1 0)) (packet-sub-packets pa)))
+    ((string= "111" (packet-type-id pa))
+     (apply (lambda (a b) (if (= (part2 a) (part2 b)) 1 0)) (packet-sub-packets pa)))))
   
