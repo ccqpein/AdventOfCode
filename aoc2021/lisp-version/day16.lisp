@@ -1,4 +1,4 @@
-;;(load "../../2020/tools.lisp")
+(load "../../2020/tools.lisp")
 
 (defstruct packet
   version
@@ -19,9 +19,10 @@
 (defun day16 (path)
   (let ((content (read-file-by-line path)))
     (loop for l in content
-          do (print (make-packet-from-input (hex-parse l)))
-          do (format t "this input ~a~%" l)
-          do (format t "~a~%" (make-packet-from-input (hex-parse l))))
+          ;;do (print (make-packet-from-input (hex-parse l)))
+          ;;do (format t "this input ~a~%" l)
+          ;;do (format t "~a~%" (make-packet-from-input (hex-parse l)))
+          do (format t "part1: ~a~%" (part1 (make-packet-from-input (hex-parse l)))))
     ))
 
 
@@ -81,3 +82,22 @@
              :sub-packets sub-packets
              )
             input)))
+
+(defun part1 (pa)
+  (+ (parse-integer (packet-version pa) :radix 2)
+     (loop for p in (packet-sub-packets pa)
+           sum (part1 p)))
+  )
+
+;;:= TODO
+(defun part2 (pa)
+  (case (packet-type-id pa)
+    ("000")
+    ("001")
+    ("010")
+    ("011")
+    ("100")
+    ("101")
+    ("110")
+    ("111")))
+  
