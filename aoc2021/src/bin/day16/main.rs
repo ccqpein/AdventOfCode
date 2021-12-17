@@ -264,7 +264,7 @@ fn part1_packet_handler(p: &Packet) -> usize {
 
 fn part2(input: &Vec<String>) {
     for a in input {
-        println!("input: {}", a);
+        println!("input: {} as {}", a, decode(a));
         let root_packet = Packet::from_input(&mut decode(a));
         println!("input {} result: {}", a, part2_packet_handler(&root_packet))
     }
@@ -431,12 +431,12 @@ fn to_decimal(s: &str) -> usize {
 
 fn main() {
     let input = read_file_by_line("./src/bin/day16/day16.input");
-    //let input = read_file_by_line("./src/bin/day16/day16_demo.input");
+    let input = read_file_by_line("./src/bin/day16/day16_demo.input");
 
     //println!("{:b}", i64::from_str_radix("D2FE28", 16).unwrap());
     //println!("decode: {}", decode("D2FE28"));
     //println!("to_decimal: {}", to_decimal("00000000011"));
-    println!("{}", decode(&input[0]));
+    //println!("{}", decode(&input[0]));
 
     println!("{:?}", part1(&input));
     println!("{:?}", part2(&input));
