@@ -92,14 +92,32 @@ impl Node {
     fn parent(&self) -> Option<Rc<RefCell<Node>>> {
         self.get_tree().map(|tree| tree.parent()).unwrap()
     }
+
+    fn get_v(&mut self) -> Option<&i32> {
+        if let Node::V(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
 }
 
-#[derive(Debug)]
 struct SFTree {
     parent: Option<Rc<RefCell<Node>>>,
     posioin: u8, // 1 means on parent left, 2 means on parent right
     left: Rc<RefCell<Node>>,
     right: Rc<RefCell<Node>>,
+}
+
+impl fmt::Debug for SFTree {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SFTree")
+            //.field("parent", &self.parent)
+            .field("posioin", &self.posioin)
+            .field("left", &self.left)
+            .field("right", &self.right)
+            .finish()
+    }
 }
 
 impl fmt::Display for SFTree {
@@ -150,10 +168,86 @@ impl SFTree {
         }
     }
 
-    fn find_left(&self) -> Option<Rc<RefCell<Self>>> {
+    fn get_left(&self) -> Rc<RefCell<Node>> {
+        self.left.clone()
+    }
+
+    fn get_right(&self) -> Rc<RefCell<Node>> {
+        self.right.clone()
+    }
+
+    fn find_leftest(node: Rc<RefCell<Node>>) -> Rc<RefCell<Node>> {
+        if node.borrow().is_value() {
+            node
+        } else {
+            Self::find_rightest(node.borrow().get_tree().unwrap().left.clone())
+        }
+    }
+
+    fn find_rightest(node: Rc<RefCell<Node>>) -> Rc<RefCell<Node>> {
+        if node.borrow().is_value() {
+            node
+        } else {
+            Self::find_rightest(node.borrow().get_tree().unwrap().right.clone())
+        }
+    }
+
+    fn find_left(&self) -> Option<Rc<RefCell<Node>>> {
         // root node
-        if self.posioin == 0 {}
-        if self.posioin == 2 {}
+        if self.posioin == 0 {
+            return None;
+        }
+        // on right
+        if self.posioin == 2 {
+            let p = self
+                .parent
+                .as_ref()
+                .unwrap()
+                .borrow()
+                .get_tree()
+                .unwrap()
+                .get_left();
+            return Some(Self::find_rightest(p));
+        }
+
+        // on left
+        if self.posioin == 1 {
+            let p = self.parent.as_ref().unwrap().clone();
+            let p = p.borrow();
+            let p = p.get_tree().unwrap();
+            return p.find_left();
+        }
+
+        None
+    }
+
+    fn find_right(&self) -> Option<Rc<RefCell<Node>>> {
+        // root node
+        if self.posioin == 0 {
+            return None;
+        }
+        // on left
+        if self.posioin == 1 {
+            let p = self
+                .parent
+                .as_ref()
+                .unwrap()
+                .borrow()
+                .get_tree()
+                .unwrap()
+                .get_right();
+            return Some(Self::find_leftest(p));
+        }
+
+        // on right
+        if self.posioin == 2 {
+            let p = self.parent.as_ref().unwrap().clone();
+            let p = p.borrow();
+            let p = p.get_tree().unwrap();
+            return p.find_right();
+        }
+
+        None
     }
 }
 
@@ -187,6 +281,14 @@ fn make_sftree(input: &mut impl Iterator<Item = char>) -> Node {
     }
 }
 
+// fn explode(tree: &SFTree) {
+//     match tree.find_left() {
+//         Some(n) => *n.borrow_mut().get_v() += ,
+
+//         None => todo!(),
+//     }
+// }
+
 fn part1(input: &Vec<String>) {}
 
 fn main() {
@@ -219,15 +321,23 @@ fn main() {
     //         .unwrap()
     // );
 
+    // let t = Rc::new(RefCell::new(Node::P(parse_input(
+    //     "[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]",
+    // ))));
     let t = Rc::new(RefCell::new(Node::P(parse_input(
-        "[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]",
+        "[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]",
     ))));
-    let t = Node::update_parent(t, None);
+    let t = Node::update_parent(t, None, 0);
     let l4 = t.borrow().get_n_level(4).unwrap();
     for t in &l4 {
         println!("{}", t.borrow());
     }
 
+    println!("left: {:?}", l4[0].borrow().get_tree().unwrap().find_left());
+    println!(
+        "right: {:?}",
+        l4[0].borrow().get_tree().unwrap().find_right()
+    );
     //println!("{:?}", part1(&input));
     //println!("{:?}", part2(&input));
 }
