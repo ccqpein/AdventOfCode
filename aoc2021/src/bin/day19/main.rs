@@ -23,18 +23,22 @@ fn day19(
         }
     }
     all_points.push(cache);
+
     // each chunks all 24 posible options
     let mut all_points_options = all_points
         .iter()
         .map(|chunk| zip_all(chunk.to_vec()))
         .collect::<Vec<Vec<Vec<(i32, i32, i32)>>>>();
 
+    // each scanner's position index comparing with scanner 0
     let mut rr = HashMap::new();
     rr.insert(0, 0);
 
+    // each scanner's location
     let mut oo = HashMap::new();
     oo.insert(0, (0, 0, 0));
 
+    //
     let mut nt: HashMap<usize, HashSet<usize>> = HashMap::new(); // default value is hashset
     let mut b = all_points_options[0][0]
         .iter()
@@ -44,10 +48,10 @@ fn day19(
     while rr.len() < all_points_options.len() {
         'aaa: for (i, chunk) in all_points_options.iter().enumerate() {
             if rr.contains_key(&i) {
+                // already have this record for this chunk
                 continue;
             }
             let mut temp_k = 0_usize;
-            //let mut add_flag = false;
             for (k, v) in &rr {
                 if nt.entry(i).or_insert(HashSet::new()).contains(&k) {
                     continue;
@@ -84,7 +88,7 @@ fn day19(
 fn zip_all(chunk: Vec<(i32, i32, i32)>) -> Vec<Vec<(i32, i32, i32)>> {
     let all_options = chunk
         .into_iter()
-        .map(|line| all_24_options(line))
+        .map(|line| all_24_options(line)) // each line 24 possible results
         .collect::<Vec<Vec<(i32, i32, i32)>>>();
 
     (0..24)
@@ -102,6 +106,8 @@ fn check(aa: &Vec<(i32, i32, i32)>, bb: &Vec<(i32, i32, i32)>) -> Option<(i32, i
     let set: HashSet<(i32, i32, i32)> = aa.iter().cloned().collect();
     for (a, b, c) in aa {
         for (d, e, f) in bb {
+            // x - d, y - e, z - f this poits offset of (d, e, f)
+            // +a +b +c means this point offset from a,b,c
             let set_match = bb
                 .iter()
                 .map(|(x, y, z)| (x - d + a, y - e + b, z - f + c))
@@ -145,6 +151,7 @@ fn main() {
     let input = read_file_by_line("./src/bin/day19/day19.input");
     //let input = read_file_by_line("./src/bin/day19/day19_demo.input");
     let (rr, oo, b) = day19(&input);
+    println!("rr {:?}, oo: {:?}, b: {:?}", rr, oo, b);
     println!("part1: {:?}", b.len());
     let mut distance = 0;
     for i in 0..oo.len() {
