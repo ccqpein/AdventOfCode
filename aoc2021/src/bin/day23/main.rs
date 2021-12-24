@@ -411,6 +411,7 @@ fn check(hrd: HRD) -> Vec<HRD> {
 fn done(hrd: &HRD) -> bool {
     for (room_i, cells) in hrd.rooms.iter().enumerate() {
         if !cells.iter().all(|cell| *cell == room_i + 1) {
+            // room_i + 1 is the numbe of letter should in this room
             return false;
         }
     }
