@@ -1,4 +1,4 @@
-(+ (* last-z 1 (+ (* 25 (if (= (+ (mod last-z 26) 10) (nth 0 number)) 0 1))
+(+ (* last-z (+ (* 25 (if (= (+ (mod last-z 26) 10) (nth 0 number)) 0 1))
                   1)
       )
    (* (nth 0 number)
@@ -14,7 +14,7 @@
    (* (+ (nth 1 number) 6)
       (if (= (+ (mod last-z 26) 12) (nth 1 number))
           0
-          1)))
+          1))) ;; => new last_z
 
 (+ (* last-z (+ (* 25 (if (= (+ (mod last-z 26) 13) (nth 2 number)) 0 1)) 1))
    (* (+ (+ 0 (nth 2 number)) 4)
