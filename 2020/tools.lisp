@@ -98,8 +98,19 @@ all rest original elements sum"
     ))
 
 (defun nth-nest (l coorp)
-  (loop for i in coorp when (or (< i 0) (> i (length l))) return nil do (setf l (nth i l))
+  (loop for i in coorp
+        when (or (< i 0) (> i (length l)))
+          return nil
+        do (setf l (nth i l))
         finally (return l)))
+
+(defun set-nth-nest (l coorp v)
+  (cond
+    ((not coorp) nil) ;; error
+    ((= 1 (length coorp)) (setf (nth (car coorp) l) v))
+    (t (set-nth-nest (nth (car coorp) l) (cdr coorp) v))))
+
+(defsetf nth-nest set-nth-nest)
 
 ;;:= need learn how to do this
 ;; (defsetf nth-nest (l coorp) (new-value)
