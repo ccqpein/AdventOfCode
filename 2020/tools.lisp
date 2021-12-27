@@ -104,13 +104,13 @@ all rest original elements sum"
         do (setf l (nth i l))
         finally (return l)))
 
-(defun set-nth-nest (l coorp v)
+(defun %set-nth-nest (l coorp v)
   (cond
     ((not coorp) nil) ;; error
     ((= 1 (length coorp)) (setf (nth (car coorp) l) v))
     (t (set-nth-nest (nth (car coorp) l) (cdr coorp) v))))
 
-(defsetf nth-nest set-nth-nest)
+(defsetf nth-nest %set-nth-nest)
 
 ;;:= need learn how to do this
 ;; (defsetf nth-nest (l coorp) (new-value)
