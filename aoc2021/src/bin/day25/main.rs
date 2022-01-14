@@ -23,7 +23,7 @@ fn part1(input: &Vec<String>) -> usize {
         }
 
         // for x in 0..=x_max {
-        //     for y in 0..y_max {
+        //     for y in 0..=y_max {
         //         if let Some(c) = new_map.get(&(x, y)) {
         //             print!("{}", c);
         //         } else {
@@ -49,7 +49,7 @@ fn part1(input: &Vec<String>) -> usize {
         }
 
         // for x in 0..=x_max {
-        //     for y in 0..y_max {
+        //     for y in 0..=y_max {
         //         if let Some(c) = new_map_2.get(&(x, y)) {
         //             print!("{}", c);
         //         } else {
