@@ -4,6 +4,9 @@ use std::io::BufReader;
 use std::path::Path;
 
 mod maps;
+/// store some useful tool for shortest path
+mod shortest_path;
+
 mod stack_machine;
 
 pub use maps::*;

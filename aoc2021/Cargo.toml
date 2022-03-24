@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tools = {path = "../2020/tools"}
+tools = {path = "../tools"}
 hex = "0.4"
 itertools = "0.10"
 lazy_static = "1.4.0"
