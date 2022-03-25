@@ -86,7 +86,6 @@ impl<T: Clone> Map<T> {
             })
     }
 
-    //:= stop here
     // fn get_around_mut<'a, 's: 'a>(
     //     &'s mut self,
     //     (r, c): (usize, usize),
