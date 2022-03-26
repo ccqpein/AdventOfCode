@@ -1,10 +1,7 @@
 use std::collections::HashSet;
+use std::collections::{BinaryHeap, HashMap};
 use std::hash::Hash;
-use std::{
-    cell::RefCell,
-    collections::{BinaryHeap, HashMap},
-    rc::Rc,
-};
+use std::ops::Add;
 
 /// value pairs of each nodes in graph
 #[derive(Debug)]
@@ -21,12 +18,12 @@ impl<ID, V: Ord> IDValuePiar<ID, V> {
         Self { inner: (id, v) }
     }
 
-    fn id(&self) -> ID {
-        self.inner.0
+    fn id(&self) -> &ID {
+        &self.inner.0
     }
 
-    fn v(&self) -> V {
-        self.inner.1
+    fn v(&self) -> &V {
+        &self.inner.1
     }
 }
 
@@ -55,7 +52,7 @@ impl<ID, V: Ord> PartialEq for IDValuePiar<ID, V> {
 /// graph for store all nodes
 struct Graph<ID, V>
 where
-    ID: Hash + Clone,
+    ID: Hash + Clone + Eq,
     V: Ord,
 {
     graph: HashMap<ID, BinaryHeap<IDValuePiar<ID, V>>>,
@@ -87,7 +84,7 @@ where
 }
 
 /// Dijkstra instance
-struct Dijkstra<ID, V> {
+struct Dijkstra {
     /*/// need record from and to for each dijkstra instance
 from: ID,
 /// need record from and to for each dijkstra instance
@@ -98,17 +95,17 @@ record: HashMap<ID, V>,
 /// keep the next round
 next_round: BinaryHeap<V>,*/}
 
-impl<ID, V> Dijkstra<ID, V>
-where
-    ID: Hash + Eq + Clone,
-    V: Ord + Default,
-{
+impl Dijkstra {
     //:= todo
     fn new() {
         todo!()
     }
 
-    fn run(&mut self, g: &Graph<ID, V>, start: ID, end: ID) {
+    fn run<ID, V>(&mut self, g: &Graph<ID, V>, start: ID, end: ID) -> V
+    where
+        ID: Hash + Clone + Eq + Copy,
+        V: Ord + Default + Add<Output = V> + Copy,
+    {
         let mut record: HashMap<ID, V> = HashMap::new();
         let mut next_round = BinaryHeap::new();
 
@@ -121,22 +118,22 @@ where
                 return *v;
             }
 
-            let this_v = record.get(&this).unwrap();
+            let this_v = record.get(&this).unwrap().to_owned();
             let neighbours = g.get(&this).unwrap().clone();
             for n in neighbours {
                 if !already.contains(n.id()) {
                     match record.get(n.id()) {
                         Some(old_v) => {
-                            if *old_v >= this_v + n.v() {
-                                record.insert(n.id(), this_v + n.v());
-                                next_round.push(IDValuePiar::new(n.id(), this_v + n.v()));
+                            if *old_v >= this_v + *n.v() {
+                                record.insert(n.id().clone(), this_v + *n.v());
+                                next_round.push(IDValuePiar::new(n.id().clone(), this_v + *n.v()));
                             } else {
-                                next_round.push(IDValuePiar::new(n.id(), n.v()));
+                                next_round.push(IDValuePiar::new(n.id().clone(), *n.v()));
                             }
                         }
                         None => {
-                            record.insert(n.id(), this_v + n.v());
-                            next_round.push(IDValuePiar::new(n.id(), this_v + n.v()));
+                            record.insert(n.id().clone(), this_v + *n.v());
+                            next_round.push(IDValuePiar::new(n.id().clone(), this_v + *n.v()));
                         }
                     }
                 }
@@ -144,7 +141,16 @@ where
 
             already.insert(this);
 
-            //:= loop next_round
+            this = loop {
+                match next_round.pop() {
+                    Some(n) => {
+                        if !already.contains(n.id()) {
+                            break *n.id();
+                        }
+                    }
+                    None => return *record.get(&end).unwrap(),
+                }
+            }
         }
     }
 }
