@@ -309,7 +309,7 @@ fn helper_v6(grid: &Vec<Vec<i32>>) -> i32 {
 
 fn helper_v7(m: &Map<i32>, start: (usize, usize), end: (usize, usize)) -> i32 {
     let mut g = Graph::new();
-    for (id, v) in m {
+    for (id, _) in m {
         for (x, v) in m.get_around_horiz(id) {
             g.insert(id, x, v)
         }
