@@ -11,6 +11,8 @@ mod stack_machine;
 
 pub use maps::*;
 
+pub use shortest_path::*;
+
 /// read file line by line
 pub fn read_file_by_line(filepath: impl AsRef<Path>) -> Vec<String> {
     let file = File::open(filepath).unwrap();

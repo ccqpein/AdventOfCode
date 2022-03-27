@@ -155,15 +155,17 @@ fn part2(input: &Vec<String>) -> i32 {
 
     let end = (cache.len() - 1, cache[0].len() - 1);
 
-    dbg!(end);
+    //dbg!(end);
 
     //helper_v3(&map, (0, 0), end) // about 120s
 
-    helper_v4(&map, (0, 0), end) // about 1.3s
+    //helper_v4(&map, (0, 0), end) // about 1.3s
 
     //helper_v5(&map, (0, 0), end) // about 17s after optimize
 
     //helper_v6(&cache) // about 12s
+
+    helper_v7(&map, (0, 0), end) // about 4s
 }
 
 fn dup_line(mut l: Vec<i32>) -> Vec<i32> {
@@ -303,6 +305,18 @@ fn helper_v6(grid: &Vec<Vec<i32>>) -> i32 {
 
     println!("loops: {}", loops);
     dists[m as usize - 1][n as usize - 1]
+}
+
+fn helper_v7(m: &Map<i32>, start: (usize, usize), end: (usize, usize)) -> i32 {
+    let mut g = Graph::new();
+    for (id, v) in m {
+        for (x, v) in m.get_around_horiz(id) {
+            g.insert(id, x, v)
+        }
+    }
+
+    let mut dj = Dijkstra::new();
+    dj.run(&g, start, end)
 }
 
 fn main() {

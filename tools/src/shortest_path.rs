@@ -5,7 +5,7 @@ use std::ops::Add;
 
 /// value pairs of each nodes in graph
 #[derive(Debug)]
-struct IDValuePiar<ID, V>
+pub struct IDValuePiar<ID, V>
 where
     V: Ord,
 {
@@ -50,7 +50,7 @@ impl<ID, V: Ord> PartialEq for IDValuePiar<ID, V> {
 }
 
 /// graph for store all nodes
-struct Graph<ID, V>
+pub struct Graph<ID, V>
 where
     ID: Hash + Clone + Eq,
     V: Ord,
@@ -64,44 +64,34 @@ where
     V: Ord,
 {
     #[must_use]
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             graph: HashMap::new(),
         }
     }
 
     /// insert neighbour node (one direction)
-    fn insert(&mut self, id: ID, other_id: ID, v: V) {
+    pub fn insert(&mut self, id: ID, other_id: ID, v: V) {
         self.graph
             .entry(id.clone())
             .or_insert(BinaryHeap::new())
             .push(IDValuePiar::new(other_id, v));
     }
 
-    fn get(&self, k: &ID) -> Option<&BinaryHeap<IDValuePiar<ID, V>>> {
+    pub fn get(&self, k: &ID) -> Option<&BinaryHeap<IDValuePiar<ID, V>>> {
         self.graph.get(k)
     }
 }
 
 /// Dijkstra instance
-struct Dijkstra {
-    /*/// need record from and to for each dijkstra instance
-from: ID,
-/// need record from and to for each dijkstra instance
-to: ID,*/
-/*
-/// save all node results
-record: HashMap<ID, V>,
-/// keep the next round
-next_round: BinaryHeap<V>,*/}
+pub struct Dijkstra {}
 
 impl Dijkstra {
-    //:= todo
-    fn new() {
-        todo!()
+    pub fn new() -> Self {
+        Dijkstra {}
     }
 
-    fn run<ID, V>(&mut self, g: &Graph<ID, V>, start: ID, end: ID) -> V
+    pub fn run<ID, V>(&mut self, g: &Graph<ID, V>, start: ID, end: ID) -> V
     where
         ID: Hash + Clone + Eq + Copy,
         V: Ord + Default + Add<Output = V> + Copy,
@@ -128,7 +118,7 @@ impl Dijkstra {
                                 record.insert(n.id().clone(), this_v + *n.v());
                                 next_round.push(IDValuePiar::new(n.id().clone(), this_v + *n.v()));
                             } else {
-                                next_round.push(IDValuePiar::new(n.id().clone(), *n.v()));
+                                next_round.push(IDValuePiar::new(n.id().clone(), *old_v));
                             }
                         }
                         None => {
