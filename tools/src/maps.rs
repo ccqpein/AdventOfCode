@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 pub struct Map<T> {
     /// total length of row and col
     r_len: usize,
@@ -85,37 +87,16 @@ impl<T: Clone> Map<T> {
                 }
             })
     }
-
-    // fn get_around_mut<'a, 's: 'a>(
-    //     &'s mut self,
-    //     (r, c): (usize, usize),
-    // ) -> Vec<((usize, usize), &'s mut T)> {
-    //     let (r, c) = (r as isize, c as isize);
-    //     [
-    //         (r - 1, c - 1),
-    //         (r - 1, c),
-    //         (r - 1, c + 1),
-    //         (r, c - 1),
-    //         (r, c + 1),
-    //         (r + 1, c - 1),
-    //         (r + 1, c),
-    //         (r + 1, c + 1),
-    //     ]
-    //     .into_iter()
-    //     .filter_map(|(r, c)| {
-    //         if r < 0 || c < 0 || r >= self.r_len as isize || c >= self.c_len as isize {
-    //             None
-    //         } else {
-    //             Some((
-    //                 (r as usize, c as usize),
-    //                 //&self.inner[r as usize][c as usize],
-    //                 self.get_mut(r as usize, c as usize).unwrap(),
-    //             ))
-    //         }
-    //     })
-    //     .collect()
-    // }
 }
+
+// impl<'a, T, I> From<I> for Map<T>
+// where
+//     I: Iterator<Item = &'a [T]>,
+// {
+//     fn from(_: I) -> Self {
+//         todo!()
+//     }
+// }
 
 impl<'a, T: Clone> IntoIterator for &'a Map<T> {
     type Item = ((usize, usize), &'a T);
