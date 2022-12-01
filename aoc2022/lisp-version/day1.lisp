@@ -1,0 +1,22 @@
+(load "../../tools/tools.lisp")
+
+(defun common-part (input)
+  (let ((cache '())
+		(elves '()))
+	(dolist (line input elves)
+	  (if (string= "" line)
+		  (progn (push cache elves)
+				 (setf cache nil))
+		  (push (str::parse-integer line) cache)))))
+
+(defun day1 ()
+  (let* ((input (read-file-by-line "../inputs/day1.input"))
+		 (elves (common-part input)))
+	(car (sort (mapcar (lambda (a) (apply #'+ a)) elves) #'>))
+	))
+
+(defun day1-part2 ()
+  (let* ((input (read-file-by-line "../inputs/day1.input"))
+		 (elves (common-part input)))
+	(apply #'+ (subseq (sort (mapcar (lambda (a) (apply #'+ a)) elves) #'>) 0 3))
+	))
