@@ -131,3 +131,32 @@ all rest original elements sum"
 ;;         `(loop
 ;;            for ,(car syms) from 0 below ,xn
 ;;            do (loop-array ,(cdr dims) ,(cdr syms) ,@rest)))))
+
+
+(defparameter *aoc-session* nil "aoc session")
+
+(defun download-input (day-num &key session input-file-path)
+  "Get the {day-num} input. Maybe write to input-file-path.
+Need the session in cookie for authorizing."
+  (let ((out (make-string-output-stream))
+		content)
+	(let ((*aoc-session* (if session session *aoc-session*)))
+	  (sb-ext:run-program "curl"
+						  (list "-sL"
+								"-H"
+								(format nil "cookie: session=~a" *aoc-session*)
+								(format nil "https://adventofcode.com/2022/day/~a/input" day-num)
+								)
+						  :search t
+						  :output out))
+	
+	(setf content (get-output-stream-string out))
+	
+	(if input-file-path
+		(with-open-file (s input-file-path :direction :output :if-does-not-exist :create)
+		  (format s content)))
+	
+	content
+	))
+
+;; (download-input 1 :session "lalalalalal" :input-file-path "../aoc2022/inputs/day1.input")
