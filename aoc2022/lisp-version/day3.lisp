@@ -18,18 +18,6 @@
 	  sum (count-the-damn-point (car (intersection (concatenate 'list a)
 												   (concatenate 'list b)))))))
 
-(defun chunk-list (list n)
-  (loop
-	with x = 0
-	for end = (+ x n)
-	if (< end (length list))
-	  collect (subseq list x end) into new
-	  and do (setf x end)
-	else
-	  collect (subseq list x) into new
-	  and do (return new)
-	end))
-
 (defun day3-part2 ()
   (let ((input (read-file-by-line "../inputs/day3.input")))
 	(loop

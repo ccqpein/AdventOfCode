@@ -160,3 +160,16 @@ Need the session in cookie for authorizing."
 	))
 
 ;; (download-input 1 :session "lalalalalal" :input-file-path "../aoc2022/inputs/day1.input")
+
+(defun chunk-list (list n)
+  "chunk list to a list of serveral n elements list"
+  (loop
+	with x = 0
+	for end = (+ x n)
+	if (< end (length list))
+	  collect (subseq list x end) into new
+	  and do (setf x end)
+	else
+	  collect (subseq list x) into new
+	  and do (return new)
+	end))
