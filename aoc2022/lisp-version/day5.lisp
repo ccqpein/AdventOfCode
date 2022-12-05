@@ -15,8 +15,9 @@
 	("P")))
 
 (defun day5 (part)
-  (let ((input (read-file-by-line "../inputs/day5.input"))
-		(copy-stack (copy-seq *stack*)))
+  (let* ((input (read-file-by-line "../inputs/day5.input"))
+		 ;;(*stack* *stack-demo*)
+		 (copy-stack (copy-seq *stack*)))
 	(loop for line in input
 		  for commands = (str:split " " line)
 		  for num = (parse-integer (nth 1 commands))
