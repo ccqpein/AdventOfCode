@@ -26,7 +26,8 @@ fn day5(input: &Vec<String>, part: i32) -> String {
         let tt = commands.next().unwrap().parse::<usize>().unwrap() - 1;
 
         stack[tt] = {
-            let mut head = stack[ff][0..num].to_vec();
+            //let mut head = stack[ff][0..num].to_vec();
+            let mut head = stack[ff].drain(0..num).collect::<Vec<_>>();
             if part == 1 {
                 head.reverse();
             }
@@ -34,7 +35,8 @@ fn day5(input: &Vec<String>, part: i32) -> String {
             head
         };
 
-        stack[ff] = stack[ff][num..].to_vec();
+        //stack[ff] = stack[ff][num..].to_vec();
+        //stack[ff].drain(0..num);
     }
     String::from_iter(stack.iter().map(|l| l[0].clone()))
 }
