@@ -17,6 +17,14 @@ impl<T: Clone> Map<T> {
         }
     }
 
+    pub fn row_len(&self) -> usize {
+        self.r_len
+    }
+
+    pub fn col_len(&self) -> usize {
+        self.c_len
+    }
+
     pub fn get(&self, (x, y): (usize, usize)) -> Option<T> {
         if let Some(r) = self.inner.get(x) {
             if let Some(c) = r.get(y) {
@@ -86,6 +94,58 @@ impl<T: Clone> Map<T> {
                     None
                 }
             })
+    }
+
+    /// get the line from coordinate to upper edge.
+    /// order is from coord to edge.
+    pub fn go_through_up(
+        &self,
+        (r, c): (usize, usize),
+    ) -> impl Iterator<Item = ((usize, usize), T)> + '_ {
+        let coops = (0..r).rev().into_iter().map(move |rr| (rr, c));
+        coops.filter_map(|(rr, cc)| match self.get((rr, cc)) {
+            Some(v) => Some(((rr, cc), v)),
+            None => None,
+        })
+    }
+
+    /// get the line from coordinate to bottom edge.
+    /// order is from coord to edge.
+    pub fn go_through_down(
+        &self,
+        (r, c): (usize, usize),
+    ) -> impl Iterator<Item = ((usize, usize), T)> + '_ {
+        let coops = (r + 1..self.r_len).into_iter().map(move |rr| (rr, c));
+        coops.filter_map(|(rr, cc)| match self.get((rr, cc)) {
+            Some(v) => Some(((rr, cc), v)),
+            None => None,
+        })
+    }
+
+    /// get the line from coordinate to left edge.
+    /// order is from coord to edge.
+    pub fn go_through_left(
+        &self,
+        (r, c): (usize, usize),
+    ) -> impl Iterator<Item = ((usize, usize), T)> + '_ {
+        let coops = (0..c).rev().into_iter().map(move |cc| (r, cc));
+        coops.filter_map(|(rr, cc)| match self.get((rr, cc)) {
+            Some(v) => Some(((rr, cc), v)),
+            None => None,
+        })
+    }
+
+    /// get the line from coordinate to right edge.
+    /// order is from coord to edge.
+    pub fn go_through_right(
+        &self,
+        (r, c): (usize, usize),
+    ) -> impl Iterator<Item = ((usize, usize), T)> + '_ {
+        let coops = (c + 1..self.c_len).into_iter().map(move |cc| (r, cc));
+        coops.filter_map(|(rr, cc)| match self.get((rr, cc)) {
+            Some(v) => Some(((rr, cc), v)),
+            None => None,
+        })
     }
 }
 
@@ -284,5 +344,36 @@ mod tests {
         for i in &mut v {
             //print_type_of(i);
         }
+    }
+
+    #[test]
+    fn map_go_through_test() {
+        let mut m = Map::from(vec![
+            vec![3, 0, 3, 7, 3],
+            vec![2, 5, 5, 1, 2],
+            vec![6, 5, 3, 3, 2],
+            vec![3, 3, 5, 4, 9],
+            vec![3, 5, 3, 9, 0],
+        ]);
+
+        assert_eq!(
+            m.go_through_up((1, 2)).collect::<Vec<_>>(),
+            vec![((0, 2), 3)]
+        );
+
+        assert_eq!(
+            m.go_through_down((1, 2)).collect::<Vec<_>>(),
+            vec![((2, 2), 3), ((3, 2), 5), ((4, 2), 3)]
+        );
+
+        assert_eq!(
+            m.go_through_left((1, 2)).collect::<Vec<_>>(),
+            vec![((1, 1), 5), ((1, 0), 2)]
+        );
+
+        assert_eq!(
+            m.go_through_right((1, 2)).collect::<Vec<_>>(),
+            vec![((1, 3), 1), ((1, 4), 2)]
+        );
     }
 }
