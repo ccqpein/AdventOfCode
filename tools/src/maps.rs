@@ -1,4 +1,4 @@
-use std::convert::TryFrom;
+use std::fmt::{Debug, Display};
 
 pub struct Map<T> {
     /// total length of row and col
@@ -97,12 +97,12 @@ impl<T: Clone> Map<T> {
     }
 
     /// get the line from coordinate to upper edge.
-    /// order is from coord to edge.
+    /// order is from coord to edge. including the coop element self.
     pub fn go_through_up(
         &self,
         (r, c): (usize, usize),
     ) -> impl Iterator<Item = ((usize, usize), T)> + '_ {
-        let coops = (0..r).rev().into_iter().map(move |rr| (rr, c));
+        let coops = (0..=r).rev().into_iter().map(move |rr| (rr, c));
         coops.filter_map(|(rr, cc)| match self.get((rr, cc)) {
             Some(v) => Some(((rr, cc), v)),
             None => None,
@@ -110,12 +110,12 @@ impl<T: Clone> Map<T> {
     }
 
     /// get the line from coordinate to bottom edge.
-    /// order is from coord to edge.
+    /// order is from coord to edge. including the coop element self.
     pub fn go_through_down(
         &self,
         (r, c): (usize, usize),
     ) -> impl Iterator<Item = ((usize, usize), T)> + '_ {
-        let coops = (r + 1..self.r_len).into_iter().map(move |rr| (rr, c));
+        let coops = (r..self.r_len).into_iter().map(move |rr| (rr, c));
         coops.filter_map(|(rr, cc)| match self.get((rr, cc)) {
             Some(v) => Some(((rr, cc), v)),
             None => None,
@@ -123,12 +123,12 @@ impl<T: Clone> Map<T> {
     }
 
     /// get the line from coordinate to left edge.
-    /// order is from coord to edge.
+    /// order is from coord to edge. including the coop element self.
     pub fn go_through_left(
         &self,
         (r, c): (usize, usize),
     ) -> impl Iterator<Item = ((usize, usize), T)> + '_ {
-        let coops = (0..c).rev().into_iter().map(move |cc| (r, cc));
+        let coops = (0..=c).rev().into_iter().map(move |cc| (r, cc));
         coops.filter_map(|(rr, cc)| match self.get((rr, cc)) {
             Some(v) => Some(((rr, cc), v)),
             None => None,
@@ -136,12 +136,12 @@ impl<T: Clone> Map<T> {
     }
 
     /// get the line from coordinate to right edge.
-    /// order is from coord to edge.
+    /// order is from coord to edge. including the coop element self.
     pub fn go_through_right(
         &self,
         (r, c): (usize, usize),
     ) -> impl Iterator<Item = ((usize, usize), T)> + '_ {
-        let coops = (c + 1..self.c_len).into_iter().map(move |cc| (r, cc));
+        let coops = (c..self.c_len).into_iter().map(move |cc| (r, cc));
         coops.filter_map(|(rr, cc)| match self.get((rr, cc)) {
             Some(v) => Some(((rr, cc), v)),
             None => None,
@@ -149,14 +149,15 @@ impl<T: Clone> Map<T> {
     }
 }
 
-// impl<'a, T, I> From<I> for Map<T>
-// where
-//     I: Iterator<Item = &'a [T]>,
-// {
-//     fn from(_: I) -> Self {
-//         todo!()
-//     }
-// }
+//:= need re-write a real map display
+impl<T: Display + Debug> Display for Map<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for line in &self.inner {
+            write!(f, "{:?}\n", line)?
+        }
+        Ok(())
+    }
+}
 
 impl<'a, T: Clone> IntoIterator for &'a Map<T> {
     type Item = ((usize, usize), &'a T);

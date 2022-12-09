@@ -62,17 +62,18 @@ fn day8_part2(input: &Vec<String>) -> usize {
     tree_map
         .iter()
         .map(|(coop, t)| {
-            let up = tree_map.go_through_up(coop);
-            let down = tree_map.go_through_down(coop);
-            let left = tree_map.go_through_left(coop);
-            let right = tree_map.go_through_right(coop);
+            let up = tree_map.go_through_up(coop).skip(1);
+            let down = tree_map.go_through_down(coop).skip(1);
+            let left = tree_map.go_through_left(coop).skip(1);
+            let right = tree_map.go_through_right(coop).skip(1);
 
             part2_helper(up, *t)
-                + part2_helper(down, *t)
-                + part2_helper(left, *t)
-                + part2_helper(right, *t)
+                * part2_helper(down, *t)
+                * part2_helper(left, *t)
+                * part2_helper(right, *t)
         })
-        .sum()
+        .max()
+        .unwrap()
 }
 
 fn part2_helper(trees: impl Iterator<Item = ((usize, usize), i32)>, this_tree: i32) -> usize {
@@ -88,7 +89,7 @@ fn part2_helper(trees: impl Iterator<Item = ((usize, usize), i32)>, this_tree: i
 }
 
 fn main() {
-    //let input = read_file_by_line("./inputs/day8_demo.input")
+    //let input = read_file_by_line("./inputs/day8_demo.input");
     let input = read_file_by_line("./inputs/day8.input");
     println!("{}", day8(&input));
     println!("{}", day8_part2(&input));
