@@ -50,19 +50,19 @@ fn move_close(head: &(i32, i32), tail: &(i32, i32)) -> (i32, i32) {
     let mut row_offset = 0;
     let mut col_offset = 0;
 
-    if (head.0 - tail.0) == -2 {
-        row_offset = -1;
-        col_offset = head.1 - tail.1;
-    } else if (head.0 - tail.0) == 2 {
-        row_offset = 1;
-        col_offset = head.1 - tail.1;
-    };
+    if (tail.0 - head.0).abs() <= 1 && (tail.1 - head.1).abs() <= 1 {
+        return *tail;
+    }
 
-    if (head.1 - tail.1) == -2 {
-        row_offset = head.0 - tail.0;
+    if (head.0 - tail.0) < 0 {
+        row_offset = -1;
+    } else if (head.0 - tail.0) > 0 {
+        row_offset = 1;
+    }
+
+    if (head.1 - tail.1) < 0 {
         col_offset = -1;
-    } else if (head.1 - tail.1) == 2 {
-        row_offset = head.0 - tail.0;
+    } else if (head.1 - tail.1) > 0 {
         col_offset = 1;
     }
 
