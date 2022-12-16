@@ -29,28 +29,74 @@
 (defun part1 (graph)
   (loop for (v next) = (gethash "AA" graph)
 		return (loop for n in next
-					 maximize (move n graph 30 (make-hash-table :test 'equal)))
+					 maximize (move n graph 29
+									(make-hash-table :test 'equal)
+									'()
+									(all-valves-has-rate graph)))
 		))
 
-(defun move (start graph min-left cache)
-  ;;(format t "start: ~a, min-left: ~a~%" start min-left)
-  (if (< min-left 0) (return-from move 0))
-  (if (gethash (list start min-left) cache)
-	  (gethash (list start min-left) cache))
+(defun all-valves-has-rate (graph)
+  (loop
+	with set = (make-hash-set)
+	for k being the hash-key using (hash-value (v next)) of graph
+	when (/= 0 v)
+	  do (set-insert set k)
+	finally (return set)
+	))
+
+(defun move (start graph min-left cache already has-rate)
+  (format t "start: ~a, min-left: ~a, already: ~a~%" start min-left already)
+  (if (<= min-left 0) (return-from move 0))
+  
+  (if (gethash (list start min-left (sort already 'string<)) cache)
+	  (return-from move (gethash (list start min-left already) cache)))
+
+  (if (every (lambda (v) (member v already :test 'string=)) (set-to-list has-rate))
+	  (return-from move 0))
   
   (let* ((value (gethash start graph))
 		 (v (first value))
 		 (next (second value))
 		 result)
+	
 	(setf result
 		  (if (= 0 v)
 			  (loop for n in next
-					maximize (move n graph (1- min-left) cache))
+					maximize (move n graph (1- min-left) cache already has-rate))
 			  ;; two other options
 			  (max (loop for n in next
-						 maximize (move n graph (1- min-left) cache))
-				   (loop for n in next
-						 maximize (+ (* v (1- min-left)) (move n graph (- min-left 2) cache))))))
-	(setf (gethash (list start min-left) cache) result)
+						 maximize (move n graph (1- min-left) cache already has-rate)
+						 ;;do (if (string= "EE" n) (format t "what a fuck: ~a, ~a~%" start n))
+						 )
+				   
+				   (if (not (member start already :test 'string=))
+					   (progn
+						 (format t "start: ~a, already: ~a~%" start already)
+						 (loop
+						   for n in next
+						   maximize (+ (* v (1- min-left))
+									   (progn
+										 (format t "in loop: start:~a, already: ~a, check: ~a~%"
+												 start already (not (member start already :test 'string=)))
+										 (move n graph (- min-left 2) cache (cons start already) has-rate)))
+						   ;; do (if (string= "EE" n)
+						   ;; 		  (format t "what a fuck in loop: ~a ~a ~a~%" start n already))
+						   ))
+					   0))))
+	(if (equal already '("EE" "EE")) (format t "what the fuck: ~a~%" start))
+	(setf (gethash (list start min-left (sort already 'string<)) cache) result)
 	result
 	))
+
+(let ((cache (make-hash-table :test 'equal)))
+  (move "DD" (gen-graph *demo-input*) 6 cache '() (all-valves-has-rate (gen-graph *demo-input*)))
+  (loop for k being the hash-key using (hash-value v) of cache
+		do (format t "key: ~a, value: ~a~%" k v)))
+
+;; (if (not (member "EE" (sort '("EE") 'string<) :test 'string=))
+;; 	(progn (print t)
+;; 		   (loop for i from 0 to 10
+;; 				 maximize (progn (print "in loop")
+;; 								 (not (member "EE" (sort '("EE") 'string<) :test 'string=))
+;; 								 0)))
+;; 	0)
