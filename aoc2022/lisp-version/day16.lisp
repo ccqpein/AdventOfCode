@@ -45,7 +45,7 @@
 	))
 
 (defun move (start graph min-left cache already has-rate)
-  (format t "start: ~a, min-left: ~a, already: ~a~%" start min-left already)
+  ;;(format t "start: ~a, min-left: ~a, already: ~a~%" start min-left already)
   (if (<= min-left 0) (return-from move 0))
   
   (if (gethash (list start min-left (sort already 'string<)) cache)
@@ -70,20 +70,17 @@
 						 )
 				   
 				   (if (not (member start already :test 'string=))
-					   (progn
-						 (format t "start: ~a, already: ~a~%" start already)
-						 (loop
-						   for n in next
-						   maximize (+ (* v (1- min-left))
-									   (progn
-										 (format t "in loop: start:~a, already: ~a, check: ~a~%"
-												 start already (not (member start already :test 'string=)))
-										 (move n graph (- min-left 2) cache (cons start already) has-rate)))
-						   ;; do (if (string= "EE" n)
-						   ;; 		  (format t "what a fuck in loop: ~a ~a ~a~%" start n already))
-						   ))
+					   (loop
+						 for n in next
+						 maximize (+ (* v (1- min-left))
+									 (progn
+									   ;; (format t "in loop: start:~a, already: ~a, check: ~a~%"
+									   ;; 		   start already
+									   ;; 		   (not (member start already :test 'string=)))
+									   (move n graph (- min-left 2) cache (cons start already) has-rate)))
+						 )
 					   0))))
-	(if (equal already '("EE" "EE")) (format t "what the fuck: ~a~%" start))
+	;;(if (equal already '("EE" "EE")) (format t "what the fuck: ~a~%" start))
 	(setf (gethash (list start min-left (sort already 'string<)) cache) result)
 	result
 	))
