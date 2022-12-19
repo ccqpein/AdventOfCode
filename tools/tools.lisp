@@ -104,13 +104,13 @@ all rest original elements sum"
         do (setf l (nth i l))
         finally (return l)))
 
-(defun %set-nth-nest (l coorp v)
-  (cond
-    ((not coorp) nil) ;; error
-    ((= 1 (length coorp)) (setf (nth (car coorp) l) v))
-    (t (set-nth-nest (nth (car coorp) l) (cdr coorp) v))))
+;; (defun %set-nth-nest (l coorp v)
+;;   (cond
+;;     ((not coorp) nil) ;; error
+;;     ((= 1 (length coorp)) (setf (nth (car coorp) l) v))
+;;     (t (set-nth-nest (nth (car coorp) l) (cdr coorp) v))))
 
-(defsetf nth-nest %set-nth-nest)
+;; (defsetf nth-nest %set-nth-nest)
 
 ;;:= need learn how to do this
 ;; (defsetf nth-nest (l coorp) (new-value)
@@ -173,3 +173,14 @@ Need the session in cookie for authorizing."
 	  collect (subseq list x) into new
 	  and do (return new)
 	end))
+
+;;;;;;;;
+
+;; (defstruct node
+;;   parent
+;;   children
+;;   value)
+
+;; (defstruct graph
+;;   root
+;;   all-nodes)
