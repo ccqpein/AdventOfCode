@@ -97,97 +97,111 @@
 							  do (loop for j from (1+ i) below (length all-c)
 									   do (side-with (nth i all-c) (nth j all-c))))))
 	
-	;;(format t "~a~%" (alexandria:hash-table-values (gethash 2 (gethash 2 y-z-table))))
-	;;(format t "~a~%" all)
 	(apply #'+ (mapcar (lambda (c) (cube-open-surface c)) all))))
 
+(defun make-table-2 (&optional (input *input*))
+  (loop
+	with table = (make-hash-table :test 'equal)
+	for line in input
+	for c = (parse-line line)
+	do (setf (gethash (list (cube-x c) (cube-y c) (cube-z c)) table) c)
+	maximize (cube-x c) into x-max minimize (cube-x c) into x-min
+	maximize (cube-y c) into y-max minimize (cube-y c) into y-min
+	maximize (cube-z c) into z-max minimize (cube-z c) into z-min
+	finally (return (values table x-max x-min y-max y-min z-max z-min))))
+
 (defun part2 (&optional (input *input*))
-  (let (all x-y-table x-z-table y-z-table
-		x-min x-max y-min y-max z-min z-max
-		all-void-cubes
-		)
+  (let (table x-max x-min y-max y-min z-max z-min)
 	
-	(multiple-value-setq (all x-y-table x-z-table y-z-table)
-	  (make-table input))
-	
-	(loop for line in input
-		  for (x y z) = (mapcar #'parse-integer (str:split "," line))
-		  collect x into xx
-		  collect y into yy
-		  collect z into zz
-		  finally (setf x-min (apply #'min xx) x-max (apply #'max xx)
-						y-min (apply #'min yy) y-max (apply #'max yy)
-						z-min (apply #'min zz) z-max (apply #'max zz)))
-
-	;; full all cubes
-	(setf all-void-cubes
-		  (loop for x from x-min to x-max
-				append (loop for y from y-min to y-max
-							 when (table-p x-y-table x y)
-							   append (loop
-										with z-here =
-													(sort (alexandria:hash-table-keys
-														   (gethash y (gethash x x-y-table)))
-														  #'<)
-										for z from (first z-here) to (car (last z-here))
-										for cc = (make-cube :x x :y y :z z :open-surface 6)
-										if (not (table-p-3 x-y-table x y z))
-										  do (progn
-											   (insert-hash-table x-y-table cc x y z)
-											   (insert-hash-table y-z-table cc y z x)
-											   (insert-hash-table x-z-table cc x z y))
-										  and collect cc))))
-
-	(loop for x from x-min to x-max
-		  do (loop for y from y-min to y-max
-				   if (table-p x-y-table x y)
-					 do (loop with all-c = (alexandria:hash-table-values (gethash y (gethash x x-y-table)))
-							  for i from 0 below (1- (length all-c))
-							  do (loop for j from (1+ i) below (length all-c)
-									   do (side-with (nth i all-c) (nth j all-c))))))
-
-	(loop for x from x-min to x-max
-		  do (loop for z from z-min to z-max
-				   if (table-p x-z-table x z)
-					 do (loop with all-c = (alexandria:hash-table-values (gethash z (gethash x x-z-table)))
-							  for i from 0 below (1- (length all-c))
-							  do (loop for j from (1+ i) below (length all-c)
-									   do (side-with (nth i all-c) (nth j all-c))))))
-
-	(loop for y from y-min to y-max
-		  do (loop for z from z-min to z-max
-				   if (table-p y-z-table y z)
-					 do (loop with all-c = (alexandria:hash-table-values (gethash z (gethash y y-z-table)))
-							  for i from 0 below (1- (length all-c))
-							  do (loop for j from (1+ i) below (length all-c)
-									   do (side-with (nth i all-c) (nth j all-c))))))
-
-	;;(print (length (loop for c in all-void-cubes when (= 0 (cube-open-surface c)) collect c)))
-	
-	(multiple-value-setq (all x-y-table x-z-table y-z-table)
-	  (make-table input))
-	
-	(- (part1 input)
-	   (loop
-		 with checked-cubes = (loop for c in all-void-cubes when (= 0 (cube-open-surface c)) collect c)
-		 for x from x-min to x-max
-		 sum (loop for y from y-min to y-max
-				   sum (loop for z from z-min to z-max
-							 when (table-p-3 x-y-table x y z)
-							   sum (loop for c in checked-cubes
-										 when (side-with-p (gethash z (gethash y (gethash x x-y-table)))
-														   c)
-										   count 1)))))
 	))
 
+;; (defun part2 (&optional (input *input*))
+;;   (let (all x-y-table x-z-table y-z-table
+;; 		x-min x-max y-min y-max z-min z-max
+;; 		all-void-cubes
+;; 		)
+	
+;; 	(multiple-value-setq (all x-y-table x-z-table y-z-table)
+;; 	  (make-table input))
+	
+;; 	(loop for line in input
+;; 		  for (x y z) = (mapcar #'parse-integer (str:split "," line))
+;; 		  collect x into xx
+;; 		  collect y into yy
+;; 		  collect z into zz
+;; 		  finally (setf x-min (apply #'min xx) x-max (apply #'max xx)
+;; 						y-min (apply #'min yy) y-max (apply #'max yy)
+;; 						z-min (apply #'min zz) z-max (apply #'max zz)))
 
-(multiple-value-bind (all x-y-table x-z-table y-z-table)
-	(make-table *demo-input*)
-  (1-surface (gethash 2 (gethash 2 (gethash 2 x-y-table))))  
-  (print (gethash 2 (gethash 2 (gethash 2 x-y-table))))
-  (print (gethash 2 (gethash 2 (gethash 2 x-z-table))))
-  (print all)
-  )
+;; 	;; full all cubes
+;; 	(setf all-void-cubes
+;; 		  (loop for x from x-min to x-max
+;; 				append (loop for y from y-min to y-max
+;; 							 when (table-p x-y-table x y)
+;; 							   append (loop
+;; 										with z-here =
+;; 													(sort (alexandria:hash-table-keys
+;; 														   (gethash y (gethash x x-y-table)))
+;; 														  #'<)
+;; 										for z from (first z-here) to (car (last z-here))
+;; 										for cc = (make-cube :x x :y y :z z :open-surface 6)
+;; 										if (not (table-p-3 x-y-table x y z))
+;; 										  do (progn
+;; 											   (insert-hash-table x-y-table cc x y z)
+;; 											   (insert-hash-table y-z-table cc y z x)
+;; 											   (insert-hash-table x-z-table cc x z y))
+;; 										  and collect cc))))
+
+;; 	(loop for x from x-min to x-max
+;; 		  do (loop for y from y-min to y-max
+;; 				   if (table-p x-y-table x y)
+;; 					 do (loop with all-c = (alexandria:hash-table-values (gethash y (gethash x x-y-table)))
+;; 							  for i from 0 below (1- (length all-c))
+;; 							  do (loop for j from (1+ i) below (length all-c)
+;; 									   do (side-with (nth i all-c) (nth j all-c))))))
+
+;; 	(loop for x from x-min to x-max
+;; 		  do (loop for z from z-min to z-max
+;; 				   if (table-p x-z-table x z)
+;; 					 do (loop with all-c = (alexandria:hash-table-values (gethash z (gethash x x-z-table)))
+;; 							  for i from 0 below (1- (length all-c))
+;; 							  do (loop for j from (1+ i) below (length all-c)
+;; 									   do (side-with (nth i all-c) (nth j all-c))))))
+
+;; 	(loop for y from y-min to y-max
+;; 		  do (loop for z from z-min to z-max
+;; 				   if (table-p y-z-table y z)
+;; 					 do (loop with all-c = (alexandria:hash-table-values (gethash z (gethash y y-z-table)))
+;; 							  for i from 0 below (1- (length all-c))
+;; 							  do (loop for j from (1+ i) below (length all-c)
+;; 									   do (side-with (nth i all-c) (nth j all-c))))))
+
+;; 	;;(print (length (loop for c in all-void-cubes when (= 0 (cube-open-surface c)) collect c)))
+	
+;; 	(multiple-value-setq (all x-y-table x-z-table y-z-table)
+;; 	  (make-table input))
+	
+;; 	(- (part1 input)
+;; 	   (loop
+;; 		 with checked-cubes = (loop for c in all-void-cubes when (= 0 (cube-open-surface c)) collect c)
+;; 		 for x from x-min to x-max
+;; 		 sum (loop for y from y-min to y-max
+;; 				   sum (loop for z from z-min to z-max
+;; 							 when (table-p-3 x-y-table x y z)
+;; 							   sum (loop for c in checked-cubes
+;; 										 when (side-with-p (gethash z (gethash y (gethash x x-y-table)))
+;; 														   c)
+;; 										   count 1)))))
+;; 	))
+
+
+;; (multiple-value-bind (all x-y-table x-z-table y-z-table)
+;; 	(make-table *demo-input*)
+;;   (1-surface (gethash 2 (gethash 2 (gethash 2 x-y-table))))  
+;;   (print (gethash 2 (gethash 2 (gethash 2 x-y-table))))
+;;   (print (gethash 2 (gethash 2 (gethash 2 x-z-table))))
+;;   (print all)
+;;   )
 
 ;16816
 ;4042
