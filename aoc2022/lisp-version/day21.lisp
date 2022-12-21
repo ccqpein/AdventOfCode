@@ -3,7 +3,6 @@
 (defparameter *input* (read-file-by-line "../inputs/day21.input"))
 (defparameter *demo-input* (read-file-by-line "../inputs/day21_demo.input"))
 
-
 (defun parse-input (&optional (input *input*))
   (loop with table = (make-hash-table :test 'equal)
 		for line in input
@@ -155,32 +154,43 @@
 		do (setf (gethash name table) value)
 		finally (return table)))
 
-(defun to-expression (table key)
+(defun to-expression (table key cache)
+  (if (gethash key cache)
+	  (return-from to-expression (gethash key cache)))
+  
   (if (string= key "humn")
 	  (return-from to-expression (read-from-string "humn")))
   
-  (if (handler-case (parse-integer key) (error (c) nil))
+  (if (handler-case (parse-integer key) (error () nil))
 	  (return-from to-expression (parse-integer key)))
   
-  (if (consp (gethash key table))
-	  (list (if (string= "root" key)
-				(read-from-string "=")
-				(read-from-string (first (gethash key table))))
-			
-			(handler-case (eval (to-expression table (second (gethash key table))))
-			  (error () (to-expression table (second (gethash key table)))))
-			
-			(handler-case (eval (to-expression table (third (gethash key table))))
-			  (error () (to-expression table (third (gethash key table))))))
-	  
-	  (parse-integer (gethash key table))))
+  (let ((vv (if (consp (gethash key table))
+				(list (if (string= "root" key)
+						  (read-from-string "=")
+						  (read-from-string (first (gethash key table))))
+					  
+					  (handler-case (eval (to-expression table (second (gethash key table)) cache))
+						(error () (to-expression table (second (gethash key table)) cache)))
+					  
+					  (handler-case (eval (to-expression table (third (gethash key table)) cache))
+						(error () (to-expression table (third (gethash key table)) cache))))
+				
+				(parse-integer (gethash key table)))))
+	(setf (gethash key cache) vv)
+	vv
+	))
 
 (defun part2 (&optional (input *input*))
   (let* ((table (parse-input-3 input))
-		 (form (to-expression table "root"))
+		 (form (to-expression table "root" (make-hash-table :test 'equal)))
 		 HUMN)
 	(declare (special HUMN))
 	(loop for i from 0
 		  do (setf HUMN i)
+		  ;;do (print humn)
 		  if (eval form)
 			return i)))
+
+(let ((cache (make-hash-table :test 'equal)))
+  (to-expression (parse-input-3) "root" cache)
+  (gethash "root" cache))
