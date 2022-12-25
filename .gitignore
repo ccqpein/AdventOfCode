@@ -3,3 +3,6 @@
 *.fasl
 *target
 *Cargo.lock
+GPATH
+GRTAGS
+GTAGS
