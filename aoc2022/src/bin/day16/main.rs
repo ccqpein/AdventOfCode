@@ -14,6 +14,13 @@ struct Node {
     to: HashSet<String>,
 }
 
+#[derive(Hash, Eq, PartialEq)]
+struct State {
+    step_left: i32,
+    name: String,
+    already_opened: Vec<String>,
+}
+
 fn parse_line(line: &str) -> Node {
     let mut ss = line.split(' ');
     let name = ss.nth(1).unwrap().to_string();
@@ -45,16 +52,31 @@ fn helper(
     step_left: i32,
     already_opened: HashSet<String>,
     table: &HashMap<String, Node>,
+    states_keeper: &mut HashMap<State, i32>, // (step_left, this.name, already_opened)
 ) -> i32 {
     if step_left <= 0 {
         return 0;
     }
+    let mut ao = already_opened
+        .iter()
+        .map(|s| s.to_string())
+        .collect::<Vec<_>>();
+    ao.sort();
 
-    dbg!(this);
-    dbg!(&step_left);
+    let state = State {
+        step_left,
+        name: this.name.clone(),
+        already_opened: ao,
+    };
+
+    if states_keeper.contains_key(&state) {
+        return *states_keeper.get(&state).unwrap();
+    }
+    //dbg!(this);
+    //dbg!(&step_left);
 
     if already_opened.contains(&this.name) {
-        return this
+        let x = this
             .to
             .iter()
             .map(|name| {
@@ -63,10 +85,13 @@ fn helper(
                     step_left - 1,
                     already_opened.clone(),
                     table,
+                    states_keeper,
                 )
             })
             .max()
             .unwrap();
+        states_keeper.insert(state, x);
+        return x;
     } else {
         let x = this
             .to
@@ -77,6 +102,7 @@ fn helper(
                     step_left - 1,
                     already_opened.clone(),
                     table,
+                    states_keeper,
                 )
             })
             .max()
@@ -94,28 +120,50 @@ fn helper(
                         set_clone
                     },
                     table,
+                    states_keeper,
                 )
             })
             .max()
             .unwrap()
             + this.flow * (step_left - 1);
 
+        states_keeper.insert(state, max(x, y));
         return max(x, y);
     }
 }
 
 fn day16(inputs: &Vec<String>) -> i32 {
     let nodes = parse_input(inputs);
-    let mut set = HashSet::new();
+    //let mut set = HashSet::new();
     let table: HashMap<String, Node> = nodes.iter().map(|n| (n.name.clone(), n.clone())).collect();
 
-    set.insert("AA".to_string());
+    //set.insert("AA".to_string());
 
-    helper(table.get("AA").unwrap(), 3, set, &table)
+    let mut states_keeper = HashMap::new();
+    let mut max = 0;
+
+    for i in 1..=19 {
+        let mut set = HashSet::new();
+        set.insert("AA".to_string());
+        max = helper(table.get("AA").unwrap(), i, set, &table, &mut states_keeper);
+    }
+
+    let mut set = HashSet::new();
+    set.insert("AA".to_string());
+    max = helper(
+        table.get("AA").unwrap(),
+        30,
+        set,
+        &table,
+        &mut states_keeper,
+    );
+
+    max
 }
 
 fn main() {
     let input = read_file_by_line("./inputs/day16_demo.input");
+    let input = read_file_by_line("./inputs/day16.input");
     //println!("{:?}", parse_input(&input));
     println!("{}", day16(&input));
 
