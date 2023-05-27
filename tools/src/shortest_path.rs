@@ -81,6 +81,8 @@ where
     pub fn get(&self, k: &ID) -> Option<&BinaryHeap<IDValuePiar<ID, V>>> {
         self.graph.get(k)
     }
+
+    pub fn floyd_warshall(&self) {}
 }
 
 /// Dijkstra instance

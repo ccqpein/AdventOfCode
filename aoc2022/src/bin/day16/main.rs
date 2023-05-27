@@ -161,6 +161,8 @@ fn day16(inputs: &Vec<String>) -> i32 {
     max
 }
 
+//:= TODO: need the Floyd-Warshall Algorithm
+
 fn main() {
     let input = read_file_by_line("./inputs/day16_demo.input");
     let input = read_file_by_line("./inputs/day16.input");
