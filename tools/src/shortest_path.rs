@@ -58,6 +58,20 @@ where
     graph: HashMap<ID, BinaryHeap<IDValuePiar<ID, V>>>,
 }
 
+impl<'a, ID, V> IntoIterator for &'a Graph<ID, V>
+where
+    ID: Hash + Clone + Eq,
+    V: Ord,
+{
+    type Item = (&'a ID, &'a BinaryHeap<IDValuePiar<ID, V>>);
+
+    type IntoIter = std::collections::hash_map::Iter<'a, ID, BinaryHeap<IDValuePiar<ID, V>>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.graph.iter()
+    }
+}
+
 impl<ID, V> Graph<ID, V>
 where
     ID: Hash + Clone + Eq,
@@ -82,7 +96,10 @@ where
         self.graph.get(k)
     }
 
-    pub fn floyd_warshall(&self) {}
+    /// get the number of nodes of this graph
+    pub fn len(&self) -> usize {
+        self.graph.len()
+    }
 }
 
 /// Dijkstra instance
@@ -147,9 +164,112 @@ impl Dijkstra {
     }
 }
 
+pub struct FloydWarshall {}
+
+impl FloydWarshall {
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    /// this run with the graph.
+    /// graph is a bit diffrent that the self node need inside the neighbours of this node
+    pub fn run<ID, V>(&mut self, g: &Graph<ID, V>) -> HashMap<ID, HashMap<ID, Option<V>>>
+    where
+        ID: Hash + Clone + Eq + Copy + std::fmt::Debug + std::fmt::Display,
+        V: Ord + Default + Add<Output = V> + Copy + std::fmt::Debug,
+    {
+        //:= DEL: let num_of_nodes = g.len();
+
+        //:= DEL: let mut distances = vec![vec![usize::MAX / 2; num_of_nodes]; num_of_nodes];
+        let mut distances: HashMap<ID, HashMap<ID, Option<V>>> = HashMap::new();
+
+        for (this, neighbours) in g {
+            for n in neighbours {
+                //dbg!(&this);
+                //dbg!(&n);
+                //let x = distances.entry(*this).or_insert(HashMap::new());
+                //let x = x.entry(*n.id()).or_insert(Default::default());
+                //*x = *n.v();
+
+                *distances
+                    .entry(*this)
+                    .or_insert(HashMap::new())
+                    .entry(*n.id())
+                    .or_insert(Default::default()) = Some(*n.v());
+                //*distances.get_mut(this).unwrap().get_mut(n.id()).unwrap() = *n.v();
+                //*distances.get_mut(n.id()).unwrap().get_mut(this).unwrap() = 1;
+            }
+
+            // this one need to add the self node to the neighbours of self node
+            //*distances.get_mut(this).unwrap().get_mut(this).unwrap() = Default::default();
+            distances
+                .entry(*this)
+                .or_insert(HashMap::new())
+                .entry(*this)
+                .or_insert(Default::default());
+        }
+
+        for (k, _) in g {
+            for (i, _) in g {
+                for (j, _) in g {
+                    println!("k:{k}, i:{i}, j:{j}");
+                    let x = match distances.get(i).unwrap().get(k) {
+                        Some(x) => *x,
+                        None => None,
+                    };
+
+                    let y = match distances.get(k).unwrap().get(j) {
+                        Some(x) => *x,
+                        None => None,
+                    };
+
+                    if x.is_none() || y.is_none() {
+                        match distances.get_mut(i).unwrap().get_mut(j) {
+                            Some(_) => (),
+                            None => {
+                                distances.get_mut(i).unwrap().insert(*j, None);
+                            }
+                        }
+                    } else {
+                        match distances.get_mut(i).unwrap().get_mut(j) {
+                            Some(a) => {
+                                match a {
+                                    Some(_) => *a = Some(a.unwrap().min(x.unwrap() + y.unwrap())),
+                                    None => *a = Some(x.unwrap() + y.unwrap()),
+                                }
+                                //*a = Some(a.unwrap().min(x.unwrap() + y.unwrap()));
+                            }
+                            None => {
+                                distances
+                                    .get_mut(i)
+                                    .unwrap()
+                                    .insert(*j, Some(x.unwrap() + y.unwrap()));
+                            }
+                        };
+
+                        // *distances.get_mut(i).unwrap().get_mut(j).unwrap() =
+                        //     Some(aa.min(x.unwrap() + y.unwrap()));
+                    }
+                    // *distances.get_mut(i).unwrap().get_mut(j).unwrap() = aa.min(
+                    //     match distances.get(i).unwrap().get(k) {
+                    //         Some(x) => *x,
+                    //         None => None,
+                    //     } + match distances.get(k).unwrap().get(j) {
+                    //         Some(x) => *x,
+                    //         None => None,
+                    //     },
+                    // )
+                }
+            }
+        }
+        distances
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn test_binaryheap_with_IDValuePair() {
         let a = IDValuePiar::new("a", 1);
@@ -168,5 +288,26 @@ mod tests {
 
         // `ID` doesn't compare in Eq trait implement
         assert_eq!(heap.pop(), Some(IDValuePiar::new("1", 4)));
+    }
+
+    #[test]
+    fn test_run_floyd_warshall() {
+        let mut g = Graph::new();
+
+        g.insert(2, 1, 4);
+        g.insert(2, 3, 3);
+        g.insert(1, 3, -2);
+        g.insert(3, 4, 2);
+        g.insert(4, 2, -1);
+
+        g.insert(1, 1, 0);
+        g.insert(2, 2, 0);
+        g.insert(3, 3, 0);
+        g.insert(4, 4, 0);
+
+        let mut fw = FloydWarshall::new();
+        let table = fw.run(&g);
+
+        dbg!(table);
     }
 }
