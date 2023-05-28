@@ -175,7 +175,7 @@ impl FloydWarshall {
     /// graph is a bit diffrent that the self node need inside the neighbours of this node
     pub fn run<ID, V>(&mut self, g: &Graph<ID, V>) -> HashMap<ID, HashMap<ID, Option<V>>>
     where
-        ID: Hash + Clone + Eq + Copy + std::fmt::Debug + std::fmt::Display,
+        ID: Hash + Clone + Eq + std::fmt::Debug + std::fmt::Display,
         V: Ord + Default + Add<Output = V> + Copy + std::fmt::Debug,
     {
         //:= DEL: let num_of_nodes = g.len();
@@ -192,9 +192,9 @@ impl FloydWarshall {
                 //*x = *n.v();
 
                 *distances
-                    .entry(*this)
+                    .entry(this.clone())
                     .or_insert(HashMap::new())
-                    .entry(*n.id())
+                    .entry(n.id().clone())
                     .or_insert(Default::default()) = Some(*n.v());
                 //*distances.get_mut(this).unwrap().get_mut(n.id()).unwrap() = *n.v();
                 //*distances.get_mut(n.id()).unwrap().get_mut(this).unwrap() = 1;
@@ -203,16 +203,16 @@ impl FloydWarshall {
             // this one need to add the self node to the neighbours of self node
             //*distances.get_mut(this).unwrap().get_mut(this).unwrap() = Default::default();
             distances
-                .entry(*this)
+                .entry(this.clone())
                 .or_insert(HashMap::new())
-                .entry(*this)
+                .entry(this.clone())
                 .or_insert(Default::default());
         }
 
         for (k, _) in g {
             for (i, _) in g {
                 for (j, _) in g {
-                    println!("k:{k}, i:{i}, j:{j}");
+                    //:= DEL: println!("k:{k}, i:{i}, j:{j}");
                     let x = match distances.get(i).unwrap().get(k) {
                         Some(x) => *x,
                         None => None,
@@ -227,7 +227,7 @@ impl FloydWarshall {
                         match distances.get_mut(i).unwrap().get_mut(j) {
                             Some(_) => (),
                             None => {
-                                distances.get_mut(i).unwrap().insert(*j, None);
+                                distances.get_mut(i).unwrap().insert(j.clone(), None);
                             }
                         }
                     } else {
@@ -243,7 +243,7 @@ impl FloydWarshall {
                                 distances
                                     .get_mut(i)
                                     .unwrap()
-                                    .insert(*j, Some(x.unwrap() + y.unwrap()));
+                                    .insert(j.clone(), Some(x.unwrap() + y.unwrap()));
                             }
                         };
 

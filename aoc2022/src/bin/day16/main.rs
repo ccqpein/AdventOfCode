@@ -5,6 +5,7 @@ use std::{
     rc::Rc,
 };
 
+use itertools::ProcessResults;
 use tools::*;
 
 #[derive(Debug, Clone)]
@@ -47,7 +48,7 @@ fn parse_input(input: &[String]) -> Vec<Node> {
     input.iter().map(|line| parse_line(line)).collect()
 }
 
-fn helper(
+fn helper_bkp(
     this: &Node,
     step_left: i32,
     already_opened: HashSet<String>,
@@ -80,7 +81,7 @@ fn helper(
             .to
             .iter()
             .map(|name| {
-                helper(
+                helper_bkp(
                     table.get(name).unwrap(),
                     step_left - 1,
                     already_opened.clone(),
@@ -97,7 +98,7 @@ fn helper(
             .to
             .iter()
             .map(|name| {
-                helper(
+                helper_bkp(
                     table.get(name).unwrap(),
                     step_left - 1,
                     already_opened.clone(),
@@ -111,7 +112,7 @@ fn helper(
             .to
             .iter()
             .map(|name| {
-                helper(
+                helper_bkp(
                     table.get(name).unwrap(),
                     step_left - 2,
                     {
@@ -132,7 +133,7 @@ fn helper(
     }
 }
 
-fn day16(inputs: &Vec<String>) -> i32 {
+fn day16_bkp(inputs: &Vec<String>) -> i32 {
     let nodes = parse_input(inputs);
     //let mut set = HashSet::new();
     let table: HashMap<String, Node> = nodes.iter().map(|n| (n.name.clone(), n.clone())).collect();
@@ -145,12 +146,12 @@ fn day16(inputs: &Vec<String>) -> i32 {
     for i in 1..=19 {
         let mut set = HashSet::new();
         set.insert("AA".to_string());
-        max = helper(table.get("AA").unwrap(), i, set, &table, &mut states_keeper);
+        max = helper_bkp(table.get("AA").unwrap(), i, set, &table, &mut states_keeper);
     }
 
     let mut set = HashSet::new();
     set.insert("AA".to_string());
-    max = helper(
+    max = helper_bkp(
         table.get("AA").unwrap(),
         30,
         set,
@@ -162,6 +163,108 @@ fn day16(inputs: &Vec<String>) -> i32 {
 }
 
 //:= TODO: need the Floyd-Warshall Algorithm
+fn helper(
+    this: &Node,
+    step_left: i32,
+    table: &HashMap<String, Node>,
+    pending_valves: HashSet<String>,
+    states_keeper: &mut HashMap<State, i32>, // (step_left, this.name, pending_valves)
+    valve_distances: &HashMap<String, HashMap<String, Option<i32>>>,
+) -> i32 {
+    let mut result = 0;
+    let mut pv = pending_valves
+        .iter()
+        .map(|s| s.to_string())
+        .collect::<Vec<_>>();
+    pv.sort();
+
+    let state = State {
+        step_left,
+        name: this.name.clone(),
+        // here, it isn;t the already open, it is the left of valves haven't open
+        // I just laxy to change the status struct
+        already_opened: pv,
+    };
+
+    if states_keeper.contains_key(&state) {
+        return *states_keeper.get(&state).unwrap();
+    }
+
+    for next_pv in pending_valves.clone() {
+        let steps = valve_distances
+            .get(&this.name)
+            .unwrap()
+            .get(&next_pv)
+            .unwrap();
+
+        // 1 more step to open the valve
+        let next_remaining_steps = step_left - steps.unwrap() - 1;
+
+        if next_remaining_steps > 0 {
+            let mut next_pending_valvas = pending_valves.clone();
+            next_pending_valvas.remove(&next_pv);
+
+            let next_result = helper(
+                table.get(&next_pv).unwrap(),
+                next_remaining_steps,
+                table,
+                next_pending_valvas,
+                states_keeper,
+                valve_distances,
+            );
+
+            let current_result =
+                next_result + table.get(&next_pv).unwrap().flow * next_remaining_steps;
+
+            result = result.max(current_result);
+        }
+    }
+
+    states_keeper.insert(state, result);
+
+    result
+}
+
+fn day16(inputs: &Vec<String>) -> i32 {
+    let nodes = parse_input(inputs);
+
+    let mut g = Graph::new();
+    for n in &nodes {
+        for t in n.to.iter() {
+            g.insert(n.name.clone(), t.to_string(), 1)
+        }
+    }
+
+    let mut fw = FloydWarshall::new();
+    let valve_distances = fw.run(&g);
+    dbg!(&valve_distances);
+
+    let table: HashMap<String, Node> = nodes.iter().map(|n| (n.name.clone(), n.clone())).collect();
+
+    let mut set = HashSet::new();
+    table.iter().for_each(|(k, v)| {
+        if v.flow > 0 {
+            set.insert(k.clone());
+        }
+    });
+    // 	table.keys().for_each(|k| {
+    //     set.insert(k.clone());
+    // });
+    //set.insert("AA".to_string());
+
+    let mut states_keeper = HashMap::new();
+
+    helper(
+        table.get("AA").unwrap(),
+        30,
+        &table,
+        set,
+        &mut states_keeper,
+        &valve_distances,
+    )
+
+    //max
+}
 
 fn main() {
     let input = read_file_by_line("./inputs/day16_demo.input");
