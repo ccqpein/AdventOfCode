@@ -143,7 +143,7 @@ fn day16_bkp(inputs: &Vec<String>) -> i32 {
     let mut states_keeper = HashMap::new();
     let mut max = 0;
 
-    for i in 1..=19 {
+    for i in 1..=30 {
         let mut set = HashSet::new();
         set.insert("AA".to_string());
         max = helper_bkp(table.get("AA").unwrap(), i, set, &table, &mut states_keeper);
@@ -162,7 +162,6 @@ fn day16_bkp(inputs: &Vec<String>) -> i32 {
     max
 }
 
-//:= TODO: need the Floyd-Warshall Algorithm
 fn helper(
     this: &Node,
     step_left: i32,
@@ -271,6 +270,7 @@ fn main() {
     let input = read_file_by_line("./inputs/day16.input");
     //println!("{:?}", parse_input(&input));
     println!("{}", day16(&input));
+    //println!("{}", day16_bkp(&input));
 
     //let input = read_file_by_line("./inputs/day16.input");
     //println!("{}", day16(&input, 1));

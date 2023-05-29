@@ -179,17 +179,16 @@ impl FloydWarshall {
         V: Ord + Default + Add<Output = V> + Copy + std::fmt::Debug,
     {
         //:= DEL: let num_of_nodes = g.len();
-
         //:= DEL: let mut distances = vec![vec![usize::MAX / 2; num_of_nodes]; num_of_nodes];
         let mut distances: HashMap<ID, HashMap<ID, Option<V>>> = HashMap::new();
 
         for (this, neighbours) in g {
             for n in neighbours {
-                //dbg!(&this);
-                //dbg!(&n);
-                //let x = distances.entry(*this).or_insert(HashMap::new());
-                //let x = x.entry(*n.id()).or_insert(Default::default());
-                //*x = *n.v();
+                //:= DEL: dbg!(&this);
+                //:= DEL: dbg!(&n);
+                //:= DEL: let x = distances.entry(*this).or_insert(HashMap::new());
+                //:= DEL: let x = x.entry(*n.id()).or_insert(Default::default());
+                //:= DEL: *x = *n.v();
 
                 *distances
                     .entry(this.clone())
