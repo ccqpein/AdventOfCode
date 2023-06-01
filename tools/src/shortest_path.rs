@@ -178,29 +178,18 @@ impl FloydWarshall {
         ID: Hash + Clone + Eq + std::fmt::Debug + std::fmt::Display,
         V: Ord + Default + Add<Output = V> + Copy + std::fmt::Debug,
     {
-        //:= DEL: let num_of_nodes = g.len();
-        //:= DEL: let mut distances = vec![vec![usize::MAX / 2; num_of_nodes]; num_of_nodes];
         let mut distances: HashMap<ID, HashMap<ID, Option<V>>> = HashMap::new();
 
         for (this, neighbours) in g {
             for n in neighbours {
-                //:= DEL: dbg!(&this);
-                //:= DEL: dbg!(&n);
-                //:= DEL: let x = distances.entry(*this).or_insert(HashMap::new());
-                //:= DEL: let x = x.entry(*n.id()).or_insert(Default::default());
-                //:= DEL: *x = *n.v();
-
                 *distances
                     .entry(this.clone())
                     .or_insert(HashMap::new())
                     .entry(n.id().clone())
                     .or_insert(Default::default()) = Some(*n.v());
-                //*distances.get_mut(this).unwrap().get_mut(n.id()).unwrap() = *n.v();
-                //*distances.get_mut(n.id()).unwrap().get_mut(this).unwrap() = 1;
             }
 
             // this one need to add the self node to the neighbours of self node
-            //*distances.get_mut(this).unwrap().get_mut(this).unwrap() = Default::default();
             distances
                 .entry(this.clone())
                 .or_insert(HashMap::new())
@@ -211,7 +200,6 @@ impl FloydWarshall {
         for (k, _) in g {
             for (i, _) in g {
                 for (j, _) in g {
-                    //:= DEL: println!("k:{k}, i:{i}, j:{j}");
                     let x = match distances.get(i).unwrap().get(k) {
                         Some(x) => *x,
                         None => None,
@@ -245,19 +233,7 @@ impl FloydWarshall {
                                     .insert(j.clone(), Some(x.unwrap() + y.unwrap()));
                             }
                         };
-
-                        // *distances.get_mut(i).unwrap().get_mut(j).unwrap() =
-                        //     Some(aa.min(x.unwrap() + y.unwrap()));
                     }
-                    // *distances.get_mut(i).unwrap().get_mut(j).unwrap() = aa.min(
-                    //     match distances.get(i).unwrap().get(k) {
-                    //         Some(x) => *x,
-                    //         None => None,
-                    //     } + match distances.get(k).unwrap().get(j) {
-                    //         Some(x) => *x,
-                    //         None => None,
-                    //     },
-                    // )
                 }
             }
         }

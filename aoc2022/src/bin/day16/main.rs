@@ -5,10 +5,10 @@ use std::{
     rc::Rc,
 };
 
-use itertools::ProcessResults;
+use itertools::{Itertools, ProcessResults};
 use tools::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 struct Node {
     name: String,
     flow: i32,
@@ -236,7 +236,7 @@ fn day16(inputs: &Vec<String>) -> i32 {
 
     let mut fw = FloydWarshall::new();
     let valve_distances = fw.run(&g);
-    dbg!(&valve_distances);
+    //dbg!(&valve_distances);
 
     let table: HashMap<String, Node> = nodes.iter().map(|n| (n.name.clone(), n.clone())).collect();
 
@@ -265,11 +265,97 @@ fn day16(inputs: &Vec<String>) -> i32 {
     //max
 }
 
+fn dat16_part2(inputs: &Vec<String>) -> i32 {
+    let nodes = parse_input(inputs);
+
+    let mut g = Graph::new();
+    for n in &nodes {
+        for t in n.to.iter() {
+            g.insert(n.name.clone(), t.to_string(), 1)
+        }
+    }
+
+    let mut fw = FloydWarshall::new();
+    let valve_distances = fw.run(&g);
+    //dbg!(&valve_distances);
+
+    let table: HashMap<String, Node> = nodes.iter().map(|n| (n.name.clone(), n.clone())).collect();
+    let mut set = HashSet::new();
+    table.iter().for_each(|(k, v)| {
+        if v.flow > 0 {
+            set.insert(k.clone());
+        }
+    });
+
+    let mut states_keeper = HashMap::new();
+    // here
+
+    partitions(table.clone())
+        .iter()
+        .map(|(left, right)| {
+            let left = helper(
+                &left[0].1,
+                26,
+                &table,
+                set.clone(),
+                &mut states_keeper,
+                &valve_distances,
+            );
+            let right = match right.get(0) {
+                Some(rr) => helper(
+                    &rr.1,
+                    26,
+                    &table,
+                    set.clone(),
+                    &mut states_keeper,
+                    &valve_distances,
+                ),
+                None => 0,
+            };
+            //let right = ;
+            left + right
+        })
+        .max()
+        .unwrap()
+}
+
+fn partitions(table: HashMap<String, Node>) -> Vec<(Vec<(String, Node)>, Vec<(String, Node)>)> {
+    let mut values = table.into_iter().collect::<Vec<_>>();
+    let mut result: Vec<Vec<(String, Node)>> = vec![vec![values[0].clone()]];
+
+    for value in &values[1..] {
+        let mut new_result = result.clone();
+        for r in result {
+            let mut cloned = r.clone();
+            cloned.push(value.clone());
+            new_result.push(cloned);
+        }
+        result = new_result;
+    }
+
+    result
+        .into_iter()
+        .map(|left| {
+            let values_cloned = values.clone();
+            let right = values_cloned
+                .into_iter()
+                .filter(|x| !left.contains(x))
+                .collect_vec();
+            (
+                //left.into_iter().collect::<HashMap<String, Node>>(),
+                //right.into_iter().collect::<HashMap<String, Node>>(),
+                left, right,
+            )
+        })
+        .collect_vec()
+}
+
 fn main() {
     let input = read_file_by_line("./inputs/day16_demo.input");
-    let input = read_file_by_line("./inputs/day16.input");
+    //let input = read_file_by_line("./inputs/day16.input");
     //println!("{:?}", parse_input(&input));
     println!("{}", day16(&input));
+    println!("{}", dat16_part2(&input));
     //println!("{}", day16_bkp(&input));
 
     //let input = read_file_by_line("./inputs/day16.input");
