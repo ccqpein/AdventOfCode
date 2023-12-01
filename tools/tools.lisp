@@ -134,21 +134,21 @@ all rest original elements sum"
 
 
 (defparameter *aoc-session* nil "aoc session")
+(defparameter *aoc-year* (nth 5 (multiple-value-list (get-decoded-time))) "aoc session")
 
-(defun download-input (day-num &key session input-file-path)
+(defun download-input (day-num &key (session *aoc-session*) input-file-path)
   "Get the {day-num} input. Maybe write to input-file-path.
 Need the session in cookie for authorizing."
   (let ((out (make-string-output-stream))
 		content)
-	(let ((*aoc-session* (if session session *aoc-session*)))
-	  (sb-ext:run-program "curl"
-						  (list "-sL"
-								"-H"
-								(format nil "cookie: session=~a" *aoc-session*)
-								(format nil "https://adventofcode.com/2022/day/~a/input" day-num)
-								)
-						  :search t
-						  :output out))
+	(sb-ext:run-program "curl"
+						(list "-sL"
+							  "-H"
+							  (format nil "cookie: session=~a" *aoc-session*)
+							  (format nil "https://adventofcode.com/~a/day/~a/input" *aoc-year* day-num)
+							  )
+						:search t
+						:output out)
 	
 	(setf content (get-output-stream-string out))
 	
@@ -174,13 +174,3 @@ Need the session in cookie for authorizing."
 	  and do (return new)
 	end))
 
-;;;;;;;;
-
-;; (defstruct node
-;;   parent
-;;   children
-;;   value)
-
-;; (defstruct graph
-;;   root
-;;   all-nodes)
