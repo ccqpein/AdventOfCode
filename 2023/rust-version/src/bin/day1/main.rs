@@ -1,3 +1,4 @@
+use regex::Regex;
 use tools::*;
 
 fn day1(lines: &[String]) -> i32 {
@@ -26,6 +27,23 @@ fn day1(lines: &[String]) -> i32 {
 
     //dbg!(&result);
     result.iter().sum()
+}
+
+fn day1_with_regex(lines: &[String]) -> i32 {
+    let mut result = 0;
+    let re = Regex::new(r"([0-9])").unwrap();
+    for line in lines {
+        let mut rr = re.find_iter(line);
+        let first = rr.next().unwrap().as_str().parse::<i32>().unwrap();
+        let last = match rr.last() {
+            Some(l) => l.as_str().parse::<i32>().unwrap(),
+            None => first,
+        };
+        result += 10 * first + last;
+    }
+
+    //dbg!(&result);
+    result
 }
 
 fn day1_2(lines: &[String]) -> i32 {
@@ -145,9 +163,10 @@ fn day1_2(lines: &[String]) -> i32 {
 }
 
 fn main() {
-    //let input = read_file_by_line("../inputs/day1_demo.input");
-    let input = read_file_by_line("../inputs/day1.input");
+    let input = read_file_by_line("../inputs/day1_demo.input");
+    //let input = read_file_by_line("../inputs/day1.input");
     //println!("{:?}", input);
     println!("{}", day1(&input));
-    println!("{}", day1_2(&input));
+    println!("{}", day1_with_regex(&input));
+    //println!("{}", day1_2(&input));
 }
