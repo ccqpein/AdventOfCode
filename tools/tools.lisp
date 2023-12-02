@@ -7,7 +7,7 @@
   )
 
 (defstruct (hash-set (:conc-name set-)
-                     (:copier copy-hash-set))
+                     (:copier nil))
   "hash set"
   (inner (make-hash-table :test 'equal) :type hash-table :read-only t))
 
@@ -134,7 +134,7 @@ all rest original elements sum"
 
 
 (defparameter *aoc-session* nil "aoc session")
-(defparameter *aoc-year* (nth 5 (multiple-value-list (get-decoded-time))) "aoc session")
+(defparameter *aoc-year* (nth 5 (multiple-value-list (get-decoded-time))) "aoc year")
 
 (defun download-input (day-num &key (session *aoc-session*) input-file-path)
   "Get the {day-num} input. Maybe write to input-file-path.
@@ -144,7 +144,7 @@ Need the session in cookie for authorizing."
 	(sb-ext:run-program "curl"
 						(list "-sL"
 							  "-H"
-							  (format nil "cookie: session=~a" *aoc-session*)
+							  (format nil "cookie: session=~a" session)
 							  (format nil "https://adventofcode.com/~a/day/~a/input" *aoc-year* day-num)
 							  )
 						:search t
