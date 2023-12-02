@@ -1,5 +1,5 @@
 ;;; use this one
-(ql:quickload '("str" "alexandria" "split-sequence"))
+(ql:quickload '("str" "alexandria" "split-sequence" "cl-ppcre"))
 
 (defun read-file-by-line (filepath)
   "read file line by line, return a list of file"
