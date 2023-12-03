@@ -112,4 +112,37 @@
          (list r (1- c)))
         (t nil)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; try to use regex
+(defun day3-1-regex (input)
+  (let ((input (parse-input input))
+        (bucket (walk-point-regex input)))
+    (apply #'+
+           (loop with nums = '()
+                 for (num coops) in bucket
+                 do (loop for (r c) in coops
+                          if (or (adjacent-symbol input (list (1- r) c))
+                                 (adjacent-symbol input (list (1+ r) c))
+                                 (adjacent-symbol input (list r (1- c)))
+                                 (adjacent-symbol input (list r (1+ c)))
+                                 (adjacent-symbol input (list (1+ r) (1+ c)))
+                                 (adjacent-symbol input (list (1- r) (1+ c)))
+                                 (adjacent-symbol input (list (1+ r) (1- c)))
+                                 (adjacent-symbol input (list (1- r) (1- c))))
+                            do (push num nums)
+                            and return nil
+                          )
+                 finally (return nums)))
+    ))
 
+(defun walk-point-regex (input)
+  (remove
+   nil
+   (loop for line in input
+         for line-num upfrom 0
+         append (loop for (start end) on (cl-ppcre:all-matches "\\d+" line) by #'cddr
+                       collect (list (parse-integer (str:substring start end line))
+                                     (loop for a from start below end
+                                           collect (list line-num a)))))))
+
+(= (day3 *input*) (day3-1-regex *input*))
