@@ -133,8 +133,8 @@ all rest original elements sum"
 ;;            do (loop-array ,(cdr dims) ,(cdr syms) ,@rest)))))
 
 
-(defparameter *aoc-session* nil "aoc session")
-(defparameter *aoc-year* (nth 5 (multiple-value-list (get-decoded-time))) "aoc year")
+(defvar *aoc-session* nil "aoc session")
+(defvar *aoc-year* (nth 5 (multiple-value-list (get-decoded-time))) "aoc year")
 
 (defun download-input (day-num &key (session *aoc-session*) input-file-path)
   "Get the {day-num} input. Maybe write to input-file-path.
