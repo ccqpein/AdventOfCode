@@ -7,17 +7,8 @@
   (let (inner-input
         seeds)
     (setf inner-input
-          (loop
-            with result = nil
-            and cache = nil
-            for line in input
-            if (string= "" line)
-              do (push (reverse cache) result)
-              and do (setf cache nil)
-            else
-              do (push line cache)
-            finally (progn (push (reverse cache) result)
-                           (return (reverse result)))))
+          (split-sequence:split-sequence-if (lambda (l) (string= "" l))
+                                            input))
     (setf seeds
           (mapcar #'parse-integer
                   (cl-ppcre:all-matches-as-strings "\\d+" (caar inner-input))))
