@@ -20,4 +20,17 @@
 
 ;;; part2:
 ;;; x is speed up time: (time - x) * x > distance
+;;; time = b, -1 = a, -distance = c;
 ;;; (floor x2) - (floor x1)
+
+(defun formula (a b c)
+  (let (x1 x2)
+    (let ((part (expt (- (expt b 2) (* 4 a c)) 1/2))
+          )
+      (setf x1 (/ (- part b) (* 2 a))
+            x2 (/ (- (+ b part)) (* 2 a))))
+    (abs (- (floor x1) (floor x2)))
+    ))
+
+;;; example
+;;; (formula -1 71530 -940200)
