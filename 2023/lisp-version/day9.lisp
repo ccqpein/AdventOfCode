@@ -20,13 +20,11 @@
             (reduce (lambda (a b) (- b a)) cache :initial-value (car this-level))
             (apply #'+ (append cache (last this-level)))))
     
-    (if (every #'zerop diff)
-        (setf this-level diff)
-        (setf cache (cons (if part2
-                              (car this-level)
-                              (car (last this-level)))
-                          cache)
-              this-level diff))))
+    (setf cache (cons (if part2
+                          (car this-level)
+                          (car (last this-level)))
+                      cache)
+          this-level diff)))
 
 (defun day9 (input &optional part2)
   (let ((input (parse-input input)))
