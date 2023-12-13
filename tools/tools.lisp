@@ -183,3 +183,25 @@ Need the session in cookie for authorizing."
 
       finally (setf raw-map (append raw-map (list result)))
       )))
+
+(defun get-aoc-map-rows-len (map)
+  (length (amap-raw-map map)))
+
+(defun get-aoc-map-cols-len (map)
+  (length (car (amap-raw-map map))))
+
+(defun get-aoc-map-row (map row)
+  (nth row (amap-raw-map map)))
+
+(defun get-aoc-map-rows (map rows)
+  (loop for row in rows
+        collect (nth row (amap-raw-map map))))
+
+(defun get-aoc-map-col (map col)
+  (loop for row in (amap-raw-map map)
+        collect (nth col row)))
+
+(defun get-aoc-map-cols (map cols)
+  (loop for col in cols
+        collect (loop for row in (amap-raw-map map)
+                      collect (nth col row))))
