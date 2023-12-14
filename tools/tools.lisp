@@ -154,35 +154,38 @@ Need the session in cookie for authorizing."
   coops-ele
   )
 
-(defun gen-aoc-map (input &key ele-frequency ele-coops coops-ele line-op)
-  (do* ((rest input (cdr rest))
-        (line (car rest) (car rest))
-        (row-n 0 (1+ row-n))
-        raw-map
-        (ele-frequency (if ele-frequency (make-hash-table :test 'equal)))
-        (ele-coops (if ele-coops (make-hash-table :test 'equal)))
-        (coops-ele (if coops-ele (make-hash-table :test 'equal))))
+(defun gen-aoc-map (input &key is-cols ele-frequency ele-coops coops-ele line-op)
+  (labels ((cols-to-rows (cols)
+             (loop for r from 0 below (length (car cols))
+                   collect (loop for col in cols collect (nth r col)))))
+    (do* ((rest (if is-cols (cols-to-rows input) input) (cdr rest))
+          (line (car rest) (car rest))
+          (row-n 0 (1+ row-n))
+          raw-map
+          (ele-frequency (if ele-frequency (make-hash-table :test 'equal)))
+          (ele-coops (if ele-coops (make-hash-table :test 'equal)))
+          (coops-ele (if coops-ele (make-hash-table :test 'equal))))
 
-       ((not rest) (make-aoc-map :raw-map raw-map :ele-frequency ele-frequency
-                                 :ele-coops ele-coops :coops-ele coops-ele))
+         ((not rest) (make-aoc-map :raw-map raw-map :ele-frequency ele-frequency
+                                   :ele-coops ele-coops :coops-ele coops-ele))
 
-    (loop
-      for col-n upfrom 0
-      for ele in (if line-op (funcall line-op line) line)
-      collect ele into result
-      if ele-frequency
-        do (incf (gethash ele ele-frequency 0))
+      (loop
+        for col-n upfrom 0
+        for ele in (if line-op (funcall line-op line) line)
+        collect ele into result
+        if ele-frequency
+          do (incf (gethash ele ele-frequency 0))
 
-      if ele-coops
-        do (setf (gethash ele ele-coops)
-                 (append (gethash ele ele-coops) (list (list row-n col-n))))
+        if ele-coops
+          do (setf (gethash ele ele-coops)
+                   (append (gethash ele ele-coops) (list (list row-n col-n))))
 
-      if coops-ele
-        do (setf (gethash (list row-n col-n) coops-ele)
-                 ele)
+        if coops-ele
+          do (setf (gethash (list row-n col-n) coops-ele)
+                   ele)
 
-      finally (setf raw-map (append raw-map (list result)))
-      )))
+        finally (setf raw-map (append raw-map (list result)))
+        ))))
 
 (defun get-aoc-map-rows-len (map)
   (length (amap-raw-map map)))
@@ -205,3 +208,6 @@ Need the session in cookie for authorizing."
   (loop for col in cols
         collect (loop for row in (amap-raw-map map)
                       collect (nth col row))))
+
+(defun print-raw-map (map)
+  (format t "~{~{~a~}~%~}~%" (amap-raw-map map)))
