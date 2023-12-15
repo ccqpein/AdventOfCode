@@ -211,3 +211,14 @@ Need the session in cookie for authorizing."
 
 (defun print-raw-map (map)
   (format t "~{~{~a~}~%~}~%" (amap-raw-map map)))
+
+(defun transpose-aoc-map (map)
+  (let ((raw-map (amap-raw-map map))
+        (ele-frequency (if (amap-ele-frequency map) t))
+        (ele-coops (if (amap-ele-coops map) t))
+        (coops-ele (if (amap-coops-ele map) t)))
+    (gen-aoc-map raw-map
+                 :ele-frequency ele-frequency
+                 :ele-coops ele-coops
+                 :coops-ele coops-ele
+                 :is-cols t)))
