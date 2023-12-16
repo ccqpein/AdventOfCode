@@ -18,25 +18,19 @@
     with current-v = 0
     for c in word
     do (incf current-v (char-code c))
-    do (setf current-v (* 17 current-v))
-    do (setf current-v (mod current-v 256))
+    do (setf current-v (mod (* 17 current-v) 256))
     finally (return current-v)))
 
 (defun day15 (input)
   (let ((input (parse-input input)))
-    (loop
-      for line in input
-      sum (loop
-            for word in line
-            sum (get-hash word)
-            ))))
+    (loop for line in input
+          sum (loop for word in line sum (get-hash word)))))
 
 (defun handle (table-box label len)
   (let (label-hash)
     (if (not len)
         (setf label-hash (get-hash (butlast (concatenate 'list label))))
-        (setf label-hash (get-hash (concatenate 'list label)))
-        )
+        (setf label-hash (get-hash (concatenate 'list label))))
     (if len
         (let ((box-vs (gethash label-hash table-box)))
           (loop with flag = nil
@@ -52,13 +46,11 @@
           (loop for v in box-vs
                 if (string/= (subseq label 0 (1- (length label))) (car v))
                   collect v into new-vs
-                finally (setf (gethash label-hash table-box) new-vs))))
-    ))
+                finally (setf (gethash label-hash table-box) new-vs))))))
 
 (defun day15-2 (input)
   (let ((input (parse-input-2 input))
-        (table-box (make-hash-table :test 'equal))
-        )
+        (table-box (make-hash-table :test 'equal)))
     (loop for line in input
           do (loop for (label len) in line
                    do (handle table-box label len)))

@@ -222,3 +222,17 @@ Need the session in cookie for authorizing."
                  :ele-coops ele-coops
                  :coops-ele coops-ele
                  :is-cols t)))
+
+(defmacro defun-lru (name lambda-list &body body)
+  (let ((sym (gensym))
+        (sym-label (gensym)))
+    `(let ((,sym (make-hash-table :test 'equal)))
+       (defun ,name ,lambda-list
+         (let ((v (gethash (list ,@lambda-list) ,sym)))
+           (if v (return-from ,name v)))
+         (labels ((,sym-label ,lambda-list ,@body))
+           (let ((result (apply (function ,sym-label) (list ,@lambda-list))))
+             (setf (gethash (list ,@lambda-list) ,sym) result)
+             result)))
+       ,sym
+       )))

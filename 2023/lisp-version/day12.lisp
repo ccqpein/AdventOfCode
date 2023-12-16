@@ -42,12 +42,26 @@
 (defun make-regex (ll)
   (loop for i in ll collect (format nil "[.?][#?]{~a}[.?]" i)))
 
-(defparameter *cache* (make-hash-table :test 'equal))
+;; (defparameter *cache* (make-hash-table :test 'equal))
 
-(defun scan-match (str patterns)
-  (if (gethash (list str patterns) *cache*)
-      (return-from scan-match (gethash (list str patterns) *cache*)))
+;; (defun scan-match (str patterns)
+;;   (if (gethash (list str patterns) *cache*)
+;;       (return-from scan-match (gethash (list str patterns) *cache*)))
 
+;;   (if (not patterns)
+;;       (return-from scan-match (if (str:containsp "#" str) 0 1)))
+  
+;;   (loop with index = 0
+;;         for scan = (multiple-value-list (cl-ppcre:scan (car patterns) (subseq str index)))
+;;         for m = (if (car scan) scan nil)
+;;         if (and m (not (str:containsp "#" (str:substring 0 (+ index (car m)) str))))
+;;           sum (scan-match (subseq str (+ index (cadr m) -1)) (cdr patterns)) into result
+;;           and do (incf index (+ (car m) 1))
+;;         else
+;;           do (setf (gethash (list str patterns) *cache*) result)
+;;           and return result))
+
+(defun-lru scan-match (str patterns)
   (if (not patterns)
       (return-from scan-match (if (str:containsp "#" str) 0 1)))
   
@@ -69,7 +83,7 @@
 
 (defun day12-2 (input)
   (let ((input (parse-input input)))
-    (setf *cache* (make-hash-table :test 'equal))
+    ;;(setf *cache* (make-hash-table :test 'equal))
     (loop for x in input
           sum (scan-match
                (str:concat "." (str:join "?" (loop repeat 5 collect (car x))) ".")
