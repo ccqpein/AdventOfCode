@@ -151,10 +151,10 @@ Need the session in cookie for authorizing."
   raw-map
   ele-frequency
   ele-coops
-  coops-ele
+  coop-ele
   )
 
-(defun gen-aoc-map (input &key is-cols ele-frequency ele-coops coops-ele line-op)
+(defun gen-aoc-map (input &key is-cols ele-frequency ele-coops coop-ele line-op)
   (labels ((cols-to-rows (cols)
              (loop for r from 0 below (length (car cols))
                    collect (loop for col in cols collect (nth r col)))))
@@ -164,10 +164,10 @@ Need the session in cookie for authorizing."
           raw-map
           (ele-frequency (if ele-frequency (make-hash-table :test 'equal)))
           (ele-coops (if ele-coops (make-hash-table :test 'equal)))
-          (coops-ele (if coops-ele (make-hash-table :test 'equal))))
+          (coop-ele (if coop-ele (make-hash-table :test 'equal))))
 
          ((not rest) (make-aoc-map :raw-map raw-map :ele-frequency ele-frequency
-                                   :ele-coops ele-coops :coops-ele coops-ele))
+                                   :ele-coops ele-coops :coop-ele coop-ele))
 
       (loop
         for col-n upfrom 0
@@ -180,8 +180,8 @@ Need the session in cookie for authorizing."
           do (setf (gethash ele ele-coops)
                    (append (gethash ele ele-coops) (list (list row-n col-n))))
 
-        if coops-ele
-          do (setf (gethash (list row-n col-n) coops-ele)
+        if coop-ele
+          do (setf (gethash (list row-n col-n) coop-ele)
                    ele)
 
         finally (setf raw-map (append raw-map (list result)))
@@ -212,17 +212,22 @@ Need the session in cookie for authorizing."
 (defun print-raw-map (map)
   (format t "~{~{~a~}~%~}~%" (amap-raw-map map)))
 
+(defun aoc-map-beyond-the-range (map coop)
+  (not (and (<= 0 (car coop) (1- (get-aoc-map-rows-len map)))
+            (<= 0 (cadr coop) (1- (get-aoc-map-cols-len map))))))
+
 (defun transpose-aoc-map (map)
   (let ((raw-map (amap-raw-map map))
         (ele-frequency (if (amap-ele-frequency map) t))
         (ele-coops (if (amap-ele-coops map) t))
-        (coops-ele (if (amap-coops-ele map) t)))
+        (coop-ele (if (amap-coop-ele map) t)))
     (gen-aoc-map raw-map
                  :ele-frequency ele-frequency
                  :ele-coops ele-coops
-                 :coops-ele coops-ele
+                 :coop-ele coop-ele
                  :is-cols t)))
 
+;;:= need to support &optional, &key, etc.
 (defmacro defun-lru (name lambda-list &body body)
   (let ((sym (gensym))
         (sym-label (gensym)))
