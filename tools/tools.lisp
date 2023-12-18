@@ -282,3 +282,12 @@ Need the session in cookie for authorizing."
              result)))
        ,sym
        )))
+
+(defun shoelace (all-point)
+  (labels ((matrix-op (a b)
+             (- (* (car a) (cadr b))
+                (* (cadr a) (car b)))))
+    (/ (loop for (a b) on all-point
+             while b
+             sum (matrix-op a b))
+       2)))

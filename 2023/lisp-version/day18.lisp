@@ -102,6 +102,7 @@
               (list dir num)))
           input))
 
+;;;;;;;;;;;;;;;;;;;; doesn't work ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun draw-map3 (parsed-input)
   (loop with this = '(0 0)
         and next
@@ -177,8 +178,38 @@
        (length (alexandria:hash-table-keys table)))
     ))
 
+;; (defun day18-2 (input)
+;;   (let* ((parsed-input (parse-input2 input))
+;;          (lines (draw-map3 parsed-input)))
+;;     (apply #'flood-fill2 lines (find-four-corner2 lines))
+;;     ))
+;;;;;;;;;;;;;;;;;;;; doesn't work ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun draw-map4 (parsed-input)
+  (loop with this = '(0 0)
+        and result = '((0 0))
+        for (dir num) in parsed-input
+        do (push (progn (cond 
+                          ((string= dir "R")
+                           (setf this (mapcar #'+ this (list 0 num)))
+                           )
+                          ((string= dir "L")
+                           (setf this (mapcar #'+ this (list 0 (- num))))
+                           )
+                          ((string= dir "U")
+                           (setf this (mapcar #'+ this (list (- num) 0)))
+                           )
+                          ((string= dir "D")
+                           (setf this (mapcar #'+ this (list num 0)))
+                           ))
+                        this)
+                 result)
+        finally (return (reverse result))))
+
 (defun day18-2 (input)
   (let* ((parsed-input (parse-input2 input))
-         (lines (draw-map3 parsed-input)))
-    (apply #'flood-fill2 lines (find-four-corner2 lines))
+         (lines (draw-map4 parsed-input)))
+    (+ 1
+       (abs (shoelace lines)) ;; has 0,0 start and end already
+       (/ (apply #'+ (mapcar #'cadr parsed-input)) 2))
     ))
