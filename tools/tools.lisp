@@ -241,6 +241,11 @@ Need the session in cookie for authorizing."
   (loop for col in cols
         collect (get-aoc-map-col-with-coops map col)))
 
+(defun get-aoc-map-ele (map coop)
+  (if (amap-coop-ele map)
+      (gethash coop (amap-coop-ele map))
+      (nth-nest (amap-raw-map map) coop)))
+
 (defun print-raw-map (map)
   (format t "~{~{~a~}~%~}~%" (amap-raw-map map)))
 
