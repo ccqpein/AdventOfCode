@@ -264,6 +264,10 @@ Need the session in cookie for authorizing."
                  :coop-ele coop-ele
                  :is-cols t)))
 
+;;:= need more
+(defun set-aoc-map-ele (map coop ele)
+  (setf (nth (cadr coop) (nth (car coop) (amap-raw-map map))) ele))
+
 ;;:= need to support &optional, &key, etc.
 (defmacro defun-lru (name lambda-list &body body)
   (let ((sym (gensym))
