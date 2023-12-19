@@ -25,15 +25,15 @@
   (let* ((whole (str:split ":" op))
          v o num
          (re (cadr whole)))
-    (if (= 1 (length whole)) (return-from gen-func (list "" op)))
+    (if (= 1 (length whole)) (return-from gen-func (list "" nil op)))
     (setf v (str:substring 0 1 (car whole))
           o (str:substring 1 2 (car whole))
           num (parse-integer (str:substring 2 (length (car whole)) (car whole))))
     ;;(format t "~a ~a ~a ~a~%" v o num re)
     (list v (lambda (x) (if (cond ((string= o ">") (> x num))
                                   ((string= o "<") (< x num)))
-                            re)))
-    ))
+                            re))
+          re)))
 
 (defun parse-data (data)
   (mapcar (lambda (a) (let ((a (str:split "=" a))) (cons (car a) (parse-integer (cadr a)))))
@@ -44,7 +44,7 @@
 
 (defun run (table name vv)
   (loop for ins = (gethash name table)
-        do (loop for (v f) in ins
+        do (loop for (v f re) in ins
                  for va = (assoc v vv :test #'string=)
                  ;;do (format t "~a ~a ~a~%" v f va)
                  do (if va
@@ -52,7 +52,7 @@
                                (cond ((string= "A" name) (return-from run t))
                                      ((string= "R" name) (return-from run nil))
                                      ((string/= nil name) (return))))
-                        (progn (setf name f)
+                        (progn (setf name re)
                                (cond ((string= "A" name) (return-from run t))
                                      ((string= "R" name) (return-from run nil))))
                         ))))
@@ -62,5 +62,59 @@
       (parse-input input)
     (loop for data in datas
           if (run ins-table "in" data)
-            sum (apply #'+ (mapcar #'cdr data)))
-    ))
+            sum (apply #'+ (mapcar #'cdr data)))))
+
+(defun split-list (f ll)
+  (loop for x in ll
+        if (funcall f x)
+          collect x into y
+        else
+          collect x into n
+        finally (return (values y n))))
+
+(defun run2 (table name x m a s)
+  (if (some (lambda (l) (= 0 (length l))) (list x m a s)) (return-from run2 nil))
+  (if (string= name "A") (return-from run2 (* (length x) (length m) (length a) (length s))))
+  (if (string= name "R") (return-from run2 nil))
+  
+  (let ((ins (gethash name table)))
+    (let (next-x next-m next-a next-s)
+      (loop for (vn f next-name) in ins
+            for result = nil
+            if (string/= vn "")
+              do (setf result
+                       (cond ((string= vn "x")
+                              (multiple-value-bind (next-x new-x)
+                                  (split-list f x)
+                                (setf x new-x)
+                                (run2 table next-name next-x m a s)))
+                             ((string= vn "m")
+                              (multiple-value-bind (next-m new-m)
+                                  (split-list f m)
+                                (setf m new-m)
+                                (run2 table next-name x next-m a s)))
+                             ((string= vn "a")
+                              (multiple-value-bind (next-a new-a)
+                                  (split-list f a)
+                                (setf a new-a)
+                                (run2 table next-name x m next-a s)))
+                             ((string= vn "s")
+                              (multiple-value-bind (next-s new-s)
+                                  (split-list f s)
+                                (setf s new-s)
+                                (run2 table next-name x m a next-s)))
+                             ))
+            else
+              do (setf result (run2 table next-name x m a s))
+            if result
+              sum result)
+      )))
+
+(defun day19-2 (input)
+  (multiple-value-bind (ins-table datas)
+      (parse-input input)
+    (let ((4kl (loop for i from 1 to 4000 collect i)))
+      (run2 ins-table "in" 4kl 4kl 4kl 4kl))))
+
+;;(= 368964 (day19 *input*))
+;;(= 127675188176682 (day19-2 *input*))
