@@ -206,10 +206,14 @@
                  result)
         finally (return (reverse result))))
 
-(defun day18-2 (input)
-  (let* ((parsed-input (parse-input2 input))
+(defun day18-2 (input &optional part2)
+  (let* ((parsed-input (if part2 (parse-input2 input) (parse-input input)))
          (lines (draw-map4 parsed-input)))
     (+ 1
        (abs (shoelace lines)) ;; has 0,0 start and end already
        (/ (apply #'+ (mapcar #'cadr parsed-input)) 2))
     ))
+
+;;(day18-2 *input*)
+;;(day18-2 *input* t)
+
