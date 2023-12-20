@@ -268,26 +268,69 @@ Need the session in cookie for authorizing."
 (defun set-aoc-map-ele (map coop ele)
   (setf (nth (cadr coop) (nth (car coop) (amap-raw-map map))) ele))
 
-;;:= need to support &optional, &key, etc.
-(defmacro defun-lru (name lambda-list &body body)
-  (let ((sym (gensym))
-        (sym-label (gensym)))
-    `(let ((,sym (make-hash-table :test 'equal)))
-       (defun ,name ,lambda-list
-         (let ((v (gethash (list ,@lambda-list) ,sym)))
-           (if v (return-from ,name v)))
-         (labels ((,sym-label ,lambda-list ,@body))
-           (let ((result (apply (function ,sym-label) (list ,@lambda-list))))
-             (setf (gethash (list ,@lambda-list) ,sym) result)
-             result)))
-       ,sym
-       )))
+(defun set-aoc-map-eles (map coop-eles)
+  "coop-ele => (((r c) ele) ...)"
+  (loop for (coop ele) in coop-eles
+        do (set-aoc-map-ele map coop ele)))
 
-(defun shoelace (all-point)
+(defun lambda-list-to-argument (ll)
+  "ll is the lambda-list, transf to arguments"
+  (do* ((rest ll)
+        flag
+        arguments)
+       ((not rest) (reverse arguments))
+    (cond ((eq '&optional (car rest))
+           (setf flag 'optional
+                 rest (cdr rest)))
+          ((eq '&key (car rest))
+           (setf flag 'key
+                 rest (cdr rest)))
+          ((eq '&rest (car rest))
+           (setf flag 'rest
+                 rest (cdr rest)))
+          )
+
+    (case flag
+      (optional (push (car rest) arguments))
+      (key
+       (push (intern (symbol-name (car rest)) "KEYWORD") arguments)
+       (push (car rest) arguments))
+      (rest nil)
+      (t (push (car rest) arguments)))
+    
+    (setf rest (cdr rest))
+    ))
+
+(defmacro lru (cache-syms func-declare)
+  (if (not (eq 'defun (car func-declare))) (error "only for function"))
+  (let ((table-name (gensym))
+        (shadow-func-name (gensym))
+        (cache-v (gensym)))
+    `(let ((,table-name (make-hash-table :test 'equal)))
+       (defun ,shadow-func-name ,@(cddr func-declare))
+       ,(let ((cut-pos 3))
+          (loop while
+                (cond ((stringp (nth cut-pos func-declare))
+                       (incf cut-pos)
+                       t)
+                      ((eq 'declare (car (nth cut-pos func-declare)))
+                       (incf cut-pos)
+                       t)
+                      (t nil)))
+          (append (subseq func-declare 0 cut-pos)
+                  (list `(let ((,cache-v (gethash (list ,@cache-syms) ,table-name)))
+                           (if ,cache-v (return-from ,(nth 1 func-declare) ,cache-v))
+                           (setf ,cache-v (apply #',shadow-func-name (list ,@(lambda-list-to-argument (nth 2 func-declare))))
+                                 (gethash (list ,@cache-syms) ,table-name) ,cache-v)
+                           ,cache-v)))
+          ))))
+
+(defun shoelace (all-points)
+  "need the same start and end points in all-points"
   (labels ((matrix-op (a b)
              (- (* (car a) (cadr b))
                 (* (cadr a) (car b)))))
-    (/ (loop for (a b) on all-point
+    (/ (loop for (a b) on all-points
              while b
              sum (matrix-op a b))
        2)))
