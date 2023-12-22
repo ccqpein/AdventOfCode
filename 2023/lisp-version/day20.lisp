@@ -1,6 +1,6 @@
 (load "../../tools/tools.lisp")
 
-;;(defparameter *input* (read-file-by-line "../inputs/day20.input"))
+(defparameter *input* (read-file-by-line "../inputs/day20.input"))
 (defparameter *input-demo* (read-file-by-line "../inputs/day20_demo.input"))
 
 (defun parse-input (input)
@@ -17,7 +17,8 @@
                             status nil))
                      (t (setf real-name name
                               type name)))
-               (setf (gethash real-name table) (list type status (str:split ", " targets)))))
+               (setf (gethash real-name table)
+                     (list type status (str:split ", " targets)))))
     table))
 
 (defun gen-rev-table (table)
