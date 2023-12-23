@@ -154,6 +154,7 @@ Need the session in cookie for authorizing."
   ele-frequency
   ele-coops
   coop-ele
+  ;;:= meybe need infinity here
   )
 
 (defun gen-aoc-map (input &key is-cols ele-frequency ele-coops coop-ele line-op)
@@ -264,9 +265,45 @@ Need the session in cookie for authorizing."
                  :coop-ele coop-ele
                  :is-cols t)))
 
-;;:= need more
 (defun set-aoc-map-ele (map coop ele)
-  (setf (nth (cadr coop) (nth (car coop) (amap-raw-map map))) ele))
+  (let ((old-ele (nth (cadr coop) (nth (car coop) (amap-raw-map map)))))
+    (setf (nth (cadr coop) (nth (car coop) (amap-raw-map map))) ele)
+    
+    (if (amap-coop-ele map)
+        (setf (gethash coop (amap-coop-ele map)) ele))
+
+    (if (amap-ele-coops map)
+        (progn (setf (gethash old-ele (amap-ele-coops map))
+                     (remove coop (gethash old-ele (amap-ele-coops map)) :test #'equal))
+               (push coop (gethash ele (amap-ele-coops map)))))
+
+    (if (amap-ele-frequency map)
+        (progn (decf (gethash old-ele (amap-ele-frequency map)))
+               (incf (gethash ele (amap-ele-frequency map) 0))))
+    ))
+
+;;; test
+;; (let ((m (gen-aoc-map '((0 1 2) (3 4 5))
+;;                       :ele-coops t
+;;                       :coop-ele t
+;;                       :ele-frequency t)))
+;;   (set-aoc-map-ele m '(0 1) 10)
+;;   (print-raw-map m)
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-coops m)))
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-coop-ele m)))
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-frequency m)))
+
+;;   (set-aoc-map-eles m '(((0 1) 1) ((0 0) 10)))
+;;   (print-raw-map m)
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-coops m)))
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-coop-ele m)))
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-frequency m)))
+
+;;   (set-aoc-map-eles m '(((0 0) 1) ((0 2) 1)))
+;;   (print-raw-map m)
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-coops m)))
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-coop-ele m)))
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-frequency m))))
 
 (defun set-aoc-map-eles (map coop-eles)
   "coop-ele => (((r c) ele) ...)"
@@ -320,7 +357,8 @@ Need the session in cookie for authorizing."
           (append (subseq func-declare 0 cut-pos)
                   (list `(let ((,cache-v (gethash (list ,@cache-syms) ,table-name)))
                            (if ,cache-v (return-from ,(nth 1 func-declare) ,cache-v))
-                           (setf ,cache-v (apply #',shadow-func-name (list ,@(lambda-list-to-argument (nth 2 func-declare))))
+                           (setf ,cache-v (apply #',shadow-func-name
+                                                 (list ,@(lambda-list-to-argument (nth 2 func-declare))))
                                  (gethash (list ,@cache-syms) ,table-name) ,cache-v)
                            ,cache-v)))
           ))))
