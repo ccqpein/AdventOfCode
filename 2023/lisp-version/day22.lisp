@@ -89,7 +89,7 @@
         ;;do (format t "one: ~a, rest: ~a~%" one rest)
         if (loop for uup in high-level
                  if (intersection uup rest :test #'equal)
-                    collect t into aa
+                   collect t into aa
                  else
                    collect nil into aa
                  finally (return (or (not high-level)
