@@ -8,7 +8,8 @@
 
 (defun neighbor (map coop &optional part2)
   (remove-if
-   (lambda (c) (or (aoc-map-beyond-the-range map c) (if part2 nil (char= #\# (get-aoc-map-ele map c)))))
+   (lambda (c) (or (aoc-map-beyond-the-range map c)
+                   (if part2 nil (char= #\# (get-aoc-map-ele map c)))))
    (loop for offset in '((0 1) (0 -1) (1 0) (-1 0)) collect (mapcar #'+ coop offset))))
 
 (defun downhill-check (map next-coop)
@@ -35,36 +36,30 @@
               (car (last next-tail))
               (append (nth 2 this) next-tail)))))
 
-(defun run (map start end &optional part2)
-  (let ((queue (list (list 0 start (list start))))
-        result
-        (new-sort (lambda (a b) ;; new sort doean't work
-                    (> (apply #'+ (mapcar #'abs (mapcar #'- a end)))
-                       (apply #'+ (mapcar #'abs (mapcar #'- b end)))))))
+(defun run (map start ends &optional part2)
+  (let ((queue (list (list 0 start ())))
+        result)
     (loop for x = (pop queue)
           while x
-          ;;do (format t "x: ~a~%" x)
           do (loop for n in (neighbor map (nth 1 x))
                    for nn = (next-step map x n part2)
-                   when nn
-                     do (if (equal n end)
-                            (progn (push nn result)
-                                   ;;(format t "find: ~a,~% in queue: ~a~%" nn queue)
-                                   (format t "find: ~a~%" nn)
-                                   )
+                   when (and nn (not (equal n start)))
+                     do (if (member n ends :test 'equal)
+                            (push nn result)
                             (setf queue (append queue (list nn)))))
           do (setf queue (sort queue #'> :key #'car))
-          do (setf queue (sort queue new-sort :key #'cadr))
           )
     result))
 
-(defun day23 (input &optional part2)
+(defun day23 (input)
   (let ((map (parse-input input)))
-    (run map
-         '(0 1)
-         (list (1- (get-aoc-map-rows-len map))
-               (- (get-aoc-map-cols-len map) 2))
-         part2)))
+    (car (sort (run map
+                    '(0 1)
+                    (list (list (1- (get-aoc-map-rows-len map))
+                                (- (get-aoc-map-cols-len map) 2))))
+               #'> :key #'car))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun if-special (map coop)
   (and (neighbor map coop t)
@@ -81,23 +76,48 @@
         if (if-special map coop)
           collect coop))
 
-(defun run2 (map start end)
-  (let* ((all-special-points (find-all-special-point map))
-         (table (make-hash-table :test #'equal)))
+(defun day23-2 (input)
+  (let* ((map (parse-input input))
+         (end (list (1- (get-aoc-map-rows-len map))
+                    (- (get-aoc-map-cols-len map) 2)))
+         (all-special-points (append '((0 1))
+                                     (find-all-special-point map)
+                                     (list end)
+                                     ))
+         (special-point-table (make-hash-table :test 'equal)))
 
-    ;; cache table making
-    (setf (gethash start table) (make-hash-table :test #'equal))
-    (loop for p in all-special-points do (setf (gethash p table) (make-hash-table :test #'equal)))
-    
-    (loop for point in all-special-points
-          for start-to-piont-paths = (run map start point)
-          do (loop for other-p in (remove point all-special-points :test #'equal)
-                   for paths = (run map point other-p)
-                   do (setf (gethash other-p (gethash point table))
-                            paths))
-          
-          do (setf (gethash point (gethash start table))
-                   start-to-piont-paths)
-          )
-    table
-    ))
+    (loop for p in all-special-points
+          for v = (run map p all-special-points t)
+          do (setf (gethash p special-point-table)
+                   (loop for vv in v collect (list (nth 0 vv) (nth 1 vv) (list-to-set (nth 2 vv))))))
+
+    ;;(format t "~a~%" (alexandria:hash-table-alist special-point-table))
+    ;;(format t "done table~%")
+    (car
+     (sort (loop with queue = (let ((q (make-instance 'cl-heap:fibonacci-heap
+                                                      :sort-fun #'>
+                                                      :key #'car)))
+                                (cl-heap:add-to-heap q (list 0 '(0 1) (make-hash-set)))
+                                q)
+                 and result = '()
+                 
+                 for x = (cl-heap:pop-heap queue)
+                 while x
+                 do (let ((next-jump (gethash (nth 1 x) special-point-table)))
+
+                      (setf next-jump (remove-if (lambda (n) (set-intersection-p (nth 2 x) (nth 2 n))) next-jump))
+
+                      (setf next-jump (mapcar
+                                       (lambda (n) (list (+ (nth 0 n) (nth 0 x))
+                                                         (nth 1 n)
+                                                         (set-union (nth 2 x)
+                                                                    (nth 2 n))))
+                                       next-jump))
+
+                      (loop for j in next-jump
+                            if (equal end (nth 1 j))
+                              do (push j result)
+                            else
+                              do (cl-heap:add-to-heap queue j)))
+                 finally (return result))
+           #'> :key #'car))))

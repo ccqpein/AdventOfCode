@@ -1,5 +1,5 @@
 ;;; use this one
-(ql:quickload '("str" "alexandria" "split-sequence" "cl-ppcre"))
+(ql:quickload '("str" "alexandria" "split-sequence" "cl-ppcre" "cl-heap"))
 
 (defun read-file-by-line (filepath)
   "read file line by line, return a list of file"
@@ -41,6 +41,12 @@
   (loop for k being the hash-keys of (set-inner set)
         collect k))
 
+(defun list-to-set (eles)  
+  (let ((s (make-hash-set)))
+    (dolist (ele eles)
+      (setf (gethash ele (set-inner s)) t))
+    s))
+
 (defun set-union (set other)
   "union sets, return new set"
   (make-hash-set-from-list
@@ -48,6 +54,12 @@
                  collect k)
            (loop for k being the hash-keys of (set-inner set)
                  collect k))))
+
+(defun set-intersection-p (s1 s2)
+  (loop for k being the hash-keys of (set-inner s1)
+        if (gethash k (set-inner s2))
+          return t
+        finally (return nil)))
 
 (defun set-count (set)
   (hash-table-count (set-inner set)))
@@ -81,21 +93,21 @@ all rest original elements sum"
                      result)))
       )))
 
-(defun make-matrix-from-aoc (strl)
-  "str from read-file-by-line, so the length of strl is line number"
-  (let* ((line-num (length strl))
-         (col-num (length (car strl)))
-         (m (make-array (list line-num col-num))))
-    (loop
-      for line in strL
-      for l-ind from 0
-      do (loop
-           for c across line
-           for c-ind from 0
-           do (setf (aref m l-ind c-ind) c)
-           ))
-    m
-    ))
+;; (defun make-matrix-from-aoc (strl)
+;;   "str from read-file-by-line, so the length of strl is line number"
+;;   (let* ((line-num (length strl))
+;;          (col-num (length (car strl)))
+;;          (m (make-array (list line-num col-num))))
+;;     (loop
+;;       for line in strL
+;;       for l-ind from 0
+;;       do (loop
+;;            for c across line
+;;            for c-ind from 0
+;;            do (setf (aref m l-ind c-ind) c)
+;;            ))
+;;     m
+;;     ))
 
 (defun nth-nest (l coorp)
   (loop for i in coorp
