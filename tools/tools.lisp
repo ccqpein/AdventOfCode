@@ -394,7 +394,7 @@ Need the session in cookie for authorizing."
 
 (defun expand-match-branch (str block patterns forms)
   (case patterns
-    ((t 'otherwise) `,forms)
+    ((t 'otherwise) `(progn ,@forms))
     (t (loop with regex = '("^")
             and vars = '()
             for x in patterns
@@ -418,7 +418,7 @@ Need the session in cookie for authorizing."
                                              collect `(setf ,(nth ind (reverse vars))
                                                             (elt ,regs ,ind)))
                                      (return-from ,block
-                                       ,forms))))))))))
+                                       (progn ,@forms)))))))))))
 
 (defmacro str-match (str &rest match-branches)
   (let ((block-sym (gensym)))
@@ -428,7 +428,7 @@ Need the session in cookie for authorizing."
                         str
                         block-sym
                         (nth 0 statement)
-                        (nth 1 statement))))))
+                        (cdr statement))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; some algorithm
