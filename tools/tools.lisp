@@ -392,6 +392,44 @@ Need the session in cookie for authorizing."
                            ,cache-v)))
           ))))
 
+(defun expand-match-branch (str block patterns forms)
+  (case patterns
+    ((t 'otherwise) `,forms)
+    (t (loop with regex = '("^")
+            and vars = '()
+            for x in patterns
+            do (cond ((stringp x)
+                      (push x regex))
+                     ((symbolp x)
+                      (push "(.*)" regex)
+                      (push x vars))
+                     (t (error "only symbol and string allowed in patterns")))
+            finally (push "$" regex)
+            finally (return (let ((whole-str (gensym))
+                                  (regs (gensym)))
+                              `(multiple-value-bind (,whole-str ,regs)
+                                   (cl-ppcre:scan-to-strings
+                                    ,(apply #'str:concat (reverse regex))
+                                    ,str)
+                                 (declare (ignore ,whole-str))
+                                 (when ,regs
+                                   (let ,(reverse vars)
+                                     ,@(loop for ind from 0 below (length vars)
+                                             collect `(setf ,(nth ind (reverse vars))
+                                                            (elt ,regs ,ind)))
+                                     (return-from ,block
+                                       ,forms))))))))))
+
+(defmacro str-match (str &rest match-branches)
+  (let ((block-sym (gensym)))
+    `(block ,block-sym
+       ,@(loop for statement in match-branches
+               collect (expand-match-branch
+                        str
+                        block-sym
+                        (nth 0 statement)
+                        (nth 1 statement))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; some algorithm
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
