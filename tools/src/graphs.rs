@@ -50,6 +50,7 @@ impl<ID, V: Ord> PartialEq for IDValuePiar<ID, V> {
 }
 
 /// graph for store all nodes
+/// V is the weight between the nodes
 pub struct Graph<ID, V>
 where
     ID: Hash + Clone + Eq,
@@ -239,6 +240,18 @@ impl FloydWarshall {
         }
         distances
     }
+}
+
+/// Stoer–Wagner algorithm.
+/// get the solve the minimum cut problem
+pub struct StoerWagner {}
+
+impl StoerWagner {
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    pub fn run(&self, g: &Graph<impl Hash + Clone + Eq, impl Ord>) {}
 }
 
 #[cfg(test)]

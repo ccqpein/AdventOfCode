@@ -1,5 +1,5 @@
 ;;; use this one
-(ql:quickload '("str" "alexandria" "split-sequence" "cl-ppcre" "cl-heap"))
+(ql:quickload '("str" "alexandria" "split-sequence" "cl-ppcre" "cl-heap" "trivia"))
 
 (defun read-file-by-line (filepath)
   "read file line by line, return a list of file"
@@ -396,31 +396,31 @@ Need the session in cookie for authorizing."
   (case patterns
     ((t 'otherwise) `(progn ,@forms))
     (t (loop with regex = '("^")
-            and vars = '()
-            for x in patterns
-            do (cond ((stringp x)
-                      (push x regex))
-                     ((symbolp x)
-                      (push "(.*)" regex)
-                      (push x vars))
-                     (t (error "only symbol and string allowed in patterns")))
-            finally (push "$" regex)
-            finally (return (let ((whole-str (gensym))
-                                  (regs (gensym)))
-                              `(multiple-value-bind (,whole-str ,regs)
-                                   (cl-ppcre:scan-to-strings
-                                    ,(apply #'str:concat (reverse regex))
-                                    ,str)
-                                 (declare (ignore ,whole-str))
-                                 (when ,regs
-                                   (let ,(reverse vars)
-                                     ,@(loop for ind from 0 below (length vars)
-                                             collect `(setf ,(nth ind (reverse vars))
-                                                            (elt ,regs ,ind)))
-                                     (return-from ,block
-                                       (progn ,@forms)))))))))))
+             and vars = '()
+             for x in patterns
+             do (cond ((stringp x)
+                       (push x regex))
+                      ((symbolp x)
+                       (push "(.*)" regex)
+                       (push x vars))
+                      (t (error "only symbol and string allowed in patterns")))
+             finally (push "$" regex)
+             finally (return (let ((whole-str (gensym))
+                                   (regs (gensym)))
+                               `(multiple-value-bind (,whole-str ,regs)
+                                    (cl-ppcre:scan-to-strings
+                                     ,(apply #'str:concat (reverse regex))
+                                     ,str)
+                                  (declare (ignore ,whole-str))
+                                  (when ,regs
+                                    (let ,(reverse vars)
+                                      ,@(loop for ind from 0 below (length vars)
+                                              collect `(setf ,(nth ind (reverse vars))
+                                                             (elt ,regs ,ind)))
+                                      (return-from ,block
+                                        (progn ,@forms)))))))))))
 
-(defmacro str-match (str &rest match-branches)
+(defmacro str-match (str &body match-branches)
   (let ((block-sym (gensym)))
     `(block ,block-sym
        ,@(loop for statement in match-branches
@@ -429,6 +429,26 @@ Need the session in cookie for authorizing."
                         block-sym
                         (nth 0 statement)
                         (cdr statement))))))
+
+;; (str-match "a1c5b"
+;;   (("a" b "c") (parse-integer b))
+;;   (("a" x "c" y "b") (print (parse-integer x)) (print (parse-integer y)) (list (parse-integer x) (parse-integer y)))
+;;   (t (print "aa")))
+
+;; (trivia:match "a1c5b"
+;;   ((string "a" b "c") (parse-integer b))
+;;   ((string "a" x "c" y "b") (print (parse-integer x)) (print (parse-integer y)) (list (parse-integer x) (parse-integer y)))
+;;   (t (print "aa")))
+
+;; (trivia:match #(1 2 3)
+;;   ((vector _ x _)
+;;    x))
+
+;; (trivia:match '(1 2 3)
+;;   ((list* 1 x _)
+;;    x)
+;;   ((list* _ x)
+;;    x)) ;; => 2
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; some algorithm
@@ -442,3 +462,6 @@ Need the session in cookie for authorizing."
              while b
              sum (matrix-op a b))
        2)))
+
+;;:= PICK algorithm
+;;(defun pick)
