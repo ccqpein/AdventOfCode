@@ -1,10 +1,55 @@
+use rand::seq::IteratorRandom;
 use std::collections::HashSet;
 use std::collections::{BinaryHeap, HashMap};
+use std::error::Error;
+use std::fmt::Display;
 use std::hash::Hash;
 use std::ops::Add;
 
-/// value pairs of each nodes in graph
 #[derive(Debug)]
+pub enum GErrorType {
+    WrongType,
+}
+
+impl Display for GErrorType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GErrorType::WrongType => write!(f, "WrongType"),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct GError {
+    msg: String,
+    ty: GErrorType,
+}
+
+impl GError {
+    pub fn new(kind: GErrorType, msg: &'_ str) -> Self {
+        Self {
+            msg: msg.to_string(),
+            ty: kind,
+        }
+    }
+}
+
+impl Display for GError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: {}", self, self.msg)
+    }
+}
+
+impl Error for GError {}
+
+#[derive(Clone)]
+pub enum GraphType {
+    Undirected,
+    Directed,
+}
+
+/// value pairs of each nodes in graph
+#[derive(Debug, Clone)]
 pub struct IDValuePiar<ID, V>
 where
     V: Ord,
@@ -51,18 +96,20 @@ impl<ID, V: Ord> PartialEq for IDValuePiar<ID, V> {
 
 /// graph for store all nodes
 /// V is the weight between the nodes
+#[derive(Clone)]
 pub struct Graph<ID, V>
 where
-    ID: Hash + Clone + Eq,
+    ID: Hash + Eq,
     V: Ord,
 {
+    ty: GraphType,
     graph: HashMap<ID, BinaryHeap<IDValuePiar<ID, V>>>,
 }
 
 impl<'a, ID, V> IntoIterator for &'a Graph<ID, V>
 where
     ID: Hash + Clone + Eq,
-    V: Ord,
+    V: Ord + Clone,
 {
     type Item = (&'a ID, &'a BinaryHeap<IDValuePiar<ID, V>>);
 
@@ -76,21 +123,37 @@ where
 impl<ID, V> Graph<ID, V>
 where
     ID: Hash + Clone + Eq,
-    V: Ord,
+    V: Ord + Clone,
 {
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(ty: GraphType) -> Self {
         Self {
+            ty,
             graph: HashMap::new(),
         }
     }
 
     /// insert neighbour node (one direction)
     pub fn insert(&mut self, id: ID, other_id: ID, v: V) {
-        self.graph
-            .entry(id.clone())
-            .or_insert(BinaryHeap::new())
-            .push(IDValuePiar::new(other_id, v));
+        match self.ty {
+            GraphType::Undirected => {
+                self.graph
+                    .entry(id.clone())
+                    .or_insert(BinaryHeap::new())
+                    .push(IDValuePiar::new(other_id.clone(), v.clone()));
+
+                self.graph
+                    .entry(other_id)
+                    .or_insert(BinaryHeap::new())
+                    .push(IDValuePiar::new(id, v));
+            }
+            GraphType::Directed => {
+                self.graph
+                    .entry(id.clone())
+                    .or_insert(BinaryHeap::new())
+                    .push(IDValuePiar::new(other_id, v));
+            }
+        }
     }
 
     pub fn get(&self, k: &ID) -> Option<&BinaryHeap<IDValuePiar<ID, V>>> {
@@ -101,6 +164,13 @@ where
     pub fn len(&self) -> usize {
         self.graph.len()
     }
+
+    /// return all ids of this graph
+    pub fn all_ids(&self) -> impl Iterator<Item = &ID> {
+        self.graph.keys()
+    }
+
+    //:= merge two nodes
 }
 
 /// Dijkstra instance
@@ -244,14 +314,31 @@ impl FloydWarshall {
 
 /// Stoer–Wagner algorithm.
 /// get the solve the minimum cut problem
-pub struct StoerWagner {}
+pub struct StoerWagner<ID, V>
+where
+    ID: Hash + Eq,
+    V: Ord,
+{
+    g: Graph<ID, V>,
+}
 
-impl StoerWagner {
-    pub fn new() -> Self {
-        Self {}
+impl<ID, V> StoerWagner<ID, V>
+where
+    ID: Hash + Clone + Eq,
+    V: Ord + Clone,
+{
+    /// will keep one graph copy inside
+    pub fn new(g: &Graph<ID, V>) -> Self {
+        Self { g: g.clone() }
     }
 
-    pub fn run(&self, g: &Graph<impl Hash + Clone + Eq, impl Ord>) {}
+    pub fn merge_nodes(&self, nodes: &[ID]) {}
+
+    pub fn run(&self, g: &Graph<ID, V>) {
+        let mut rng = rand::thread_rng();
+        // I am not sure if it is random or not
+        let start_node = g.all_ids().choose(&mut rng).unwrap();
+    }
 }
 
 #[cfg(test)]
@@ -280,7 +367,7 @@ mod tests {
 
     #[test]
     fn test_run_floyd_warshall() {
-        let mut g = Graph::new();
+        let mut g = Graph::new(GraphType::Directed);
 
         g.insert(2, 1, 4);
         g.insert(2, 3, 3);

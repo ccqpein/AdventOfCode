@@ -330,22 +330,22 @@ mod tests {
 
         assert_eq!(
             m.go_through_up((1, 2)).collect::<Vec<_>>(),
-            vec![((0, 2), 3)]
+            vec![((1, 2), 5), ((0, 2), 3)]
         );
 
         assert_eq!(
             m.go_through_down((1, 2)).collect::<Vec<_>>(),
-            vec![((2, 2), 3), ((3, 2), 5), ((4, 2), 3)]
+            vec![((1, 2), 5), ((2, 2), 3), ((3, 2), 5), ((4, 2), 3)]
         );
 
         assert_eq!(
             m.go_through_left((1, 2)).collect::<Vec<_>>(),
-            vec![((1, 1), 5), ((1, 0), 2)]
+            vec![((1, 2), 5), ((1, 1), 5), ((1, 0), 2)]
         );
 
         assert_eq!(
             m.go_through_right((1, 2)).collect::<Vec<_>>(),
-            vec![((1, 3), 1), ((1, 4), 2)]
+            vec![((1, 2), 5), ((1, 3), 1), ((1, 4), 2)]
         );
     }
 }
