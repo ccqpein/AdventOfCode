@@ -6,15 +6,22 @@ use std::fmt::Display;
 use std::hash::Hash;
 use std::ops::Add;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum GErrorType {
     WrongType,
+    MergeFailed,
+    DeleteFailed,
+
+    CorruptedData,
 }
 
 impl Display for GErrorType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             GErrorType::WrongType => write!(f, "WrongType"),
+            GErrorType::MergeFailed => write!(f, "MergeFailed"),
+            GErrorType::DeleteFailed => write!(f, "DeleteFailed"),
+            GErrorType::CorruptedData => write!(f, "CorruptedData"),
         }
     }
 }
@@ -42,7 +49,7 @@ impl Display for GError {
 
 impl Error for GError {}
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum GraphType {
     Undirected,
     Directed,
@@ -120,6 +127,20 @@ where
     }
 }
 
+impl<'a, ID, V> IntoIterator for &'a mut Graph<ID, V>
+where
+    ID: Hash + Clone + Eq,
+    V: Ord + Clone,
+{
+    type Item = (&'a ID, &'a mut BinaryHeap<IDValuePiar<ID, V>>);
+
+    type IntoIter = std::collections::hash_map::IterMut<'a, ID, BinaryHeap<IDValuePiar<ID, V>>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.graph.iter_mut()
+    }
+}
+
 impl<ID, V> Graph<ID, V>
 where
     ID: Hash + Clone + Eq,
@@ -170,7 +191,52 @@ where
         self.graph.keys()
     }
 
-    //:= merge two nodes
+    //:= need test
+    /// delete the node from graph. only for undirected graph so far.
+    /// because find which node direct to this node is expensive by now (2024-01-07).
+    pub fn delete_node(&mut self, id: &ID) -> Result<(), GError> {
+        if self.ty != GraphType::Undirected {
+            return Err(GError::new(
+                GErrorType::WrongType,
+                "delete only for undirection graph",
+            ));
+        }
+
+        let all_connects = match self.graph.get(id) {
+            Some(h) => h.iter().map(|bh| bh.id().clone()).collect::<Vec<_>>(),
+            None => {
+                return Err(GError::new(
+                    GErrorType::CorruptedData,
+                    "Cannot find the delete node",
+                ))
+            }
+        };
+
+        // remove all leaves nodes' records of this node
+        for n in all_connects {
+            match self.graph.get_mut(&n) {
+                Some(heap) => heap.retain(|e| e.id() != id),
+                None => {
+                    return Err(GError::new(
+                        GErrorType::CorruptedData,
+                        "Cannot find the node of delete node",
+                    ))
+                }
+            }
+        }
+
+        self.graph.remove(id);
+        Ok(())
+    }
+
+    /// merge two nodes, the new id is the first id
+    /// it doesn't check if the id1 and id2 connect directly or not.
+    pub fn merge_two_nodes(&mut self, id1: ID, id2: ID) -> Result<(), GError> {
+        // get all connections
+
+        // delete the id2
+        Ok(())
+    }
 }
 
 /// Dijkstra instance
@@ -235,24 +301,36 @@ impl Dijkstra {
     }
 }
 
-pub struct FloydWarshall {}
+#[derive(Clone)]
+pub struct FloydWarshall<ID, V>
+where
+    ID: Hash + Eq,
+    V: Ord,
+{
+    g: Graph<ID, V>,
+}
 
-impl FloydWarshall {
-    pub fn new() -> Self {
-        Self {}
+impl<ID, V> FloydWarshall<ID, V>
+where
+    ID: Hash + Clone + Eq + std::fmt::Debug + std::fmt::Display,
+    V: Ord + Default + Add<Output = V> + Copy + std::fmt::Debug,
+{
+    pub fn new(g: &Graph<ID, V>) -> Self {
+        let mut g = g.clone();
+        // add self node
+        g.graph
+            .iter_mut()
+            .for_each(|(id, v)| v.push(IDValuePiar::new(id.clone(), V::default())));
+
+        Self { g: g.clone() }
     }
 
     /// this run with the graph.
-    /// graph is a bit diffrent that the self node need inside the neighbours of this node
-    pub fn run<ID, V>(&mut self, g: &Graph<ID, V>) -> HashMap<ID, HashMap<ID, Option<V>>>
-    where
-        ID: Hash + Clone + Eq + std::fmt::Debug + std::fmt::Display,
-        V: Ord + Default + Add<Output = V> + Copy + std::fmt::Debug,
-    {
+    pub fn run(&self) -> HashMap<ID, HashMap<ID, Option<V>>> {
         let mut distances: HashMap<ID, HashMap<ID, Option<V>>> = HashMap::new();
 
-        for (this, neighbours) in g {
-            for n in neighbours {
+        for (this, neighbours) in &self.g {
+            for n in neighbours.iter() {
                 *distances
                     .entry(this.clone())
                     .or_insert(HashMap::new())
@@ -268,9 +346,9 @@ impl FloydWarshall {
                 .or_insert(Default::default());
         }
 
-        for (k, _) in g {
-            for (i, _) in g {
-                for (j, _) in g {
+        for (k, _) in &self.g {
+            for (i, _) in &self.g {
+                for (j, _) in &self.g {
                     let x = match distances.get(i).unwrap().get(k) {
                         Some(x) => *x,
                         None => None,
@@ -375,13 +453,14 @@ mod tests {
         g.insert(3, 4, 2);
         g.insert(4, 2, -1);
 
-        g.insert(1, 1, 0);
-        g.insert(2, 2, 0);
-        g.insert(3, 3, 0);
-        g.insert(4, 4, 0);
+        // from 2024-01-07 don't need to add self node
+        // g.insert(1, 1, 0);
+        // g.insert(2, 2, 0);
+        // g.insert(3, 3, 0);
+        // g.insert(4, 4, 0);
 
-        let mut fw = FloydWarshall::new();
-        let table = fw.run(&g);
+        let fw = FloydWarshall::new(&g);
+        let table = fw.run();
 
         dbg!(table);
     }
