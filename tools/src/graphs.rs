@@ -228,15 +228,6 @@ where
         self.graph.remove(id);
         Ok(())
     }
-
-    /// merge two nodes, the new id is the first id
-    /// it doesn't check if the id1 and id2 connect directly or not.
-    pub fn merge_two_nodes(&mut self, id1: ID, id2: ID) -> Result<(), GError> {
-        // get all connections
-
-        // delete the id2
-        Ok(())
-    }
 }
 
 /// Dijkstra instance
@@ -394,8 +385,8 @@ where
 /// get the solve the minimum cut problem
 pub struct StoerWagner<ID, V>
 where
-    ID: Hash + Eq,
-    V: Ord,
+    ID: Hash + Clone + Eq,
+    V: Ord + Clone + std::ops::Add + std::ops::AddAssign + std::default::Default,
 {
     g: Graph<ID, V>,
 }
@@ -403,14 +394,51 @@ where
 impl<ID, V> StoerWagner<ID, V>
 where
     ID: Hash + Clone + Eq,
-    V: Ord + Clone,
+    V: Ord + Clone + std::ops::Add + std::ops::AddAssign + std::default::Default,
 {
     /// will keep one graph copy inside
-    pub fn new(g: &Graph<ID, V>) -> Self {
-        Self { g: g.clone() }
+    pub fn new(g: &Graph<ID, V>) -> Result<Self, GError> {
+        if g.ty == GraphType::Directed {
+            return Err(GError::new(
+                GErrorType::WrongType,
+                "StoerWagner has to be undirected graph",
+            ));
+        }
+        Ok(Self { g: g.clone() })
     }
 
-    pub fn merge_nodes(&self, nodes: &[ID]) {}
+    //:= need test
+    /// merge two nodes, the new id is the first id
+    /// it doesn't check if the id1 and id2 connect directly or not.
+    pub fn merge_two_nodes(&mut self, id1: &ID, id2: &ID) -> Result<(), GError> {
+        // get all connections
+        let mut table = self
+            .g
+            .get(id1)
+            .map(|heap| {
+                heap.iter()
+                    .map(|p| (p.id().clone(), p.v().clone()))
+                    .collect::<HashMap<_, _>>()
+            })
+            .unwrap_or(HashMap::new());
+
+        if let Some(v) = self.g.get(id2) {
+            for vv in v {
+                *table.entry(vv.id().clone()).or_insert(Default::default()) += vv.v().clone()
+            }
+        }
+
+        // delete the id2 and id1
+        self.g.delete_node(id2)?;
+        self.g.delete_node(id1)?;
+
+        // re-insert the id1
+        for (other_id, v) in table {
+            self.g.insert(id1.clone(), other_id.clone(), v);
+        }
+
+        Ok(())
+    }
 
     pub fn run(&self, g: &Graph<ID, V>) {
         let mut rng = rand::thread_rng();
