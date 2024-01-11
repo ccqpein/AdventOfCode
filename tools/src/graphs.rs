@@ -407,7 +407,6 @@ where
         Ok(Self { g: g.clone() })
     }
 
-    //:= need test
     /// merge two nodes, the new id is the first id
     /// it doesn't check if the id1 and id2 connect directly or not.
     pub fn merge_two_nodes(&mut self, id1: &ID, id2: &ID) -> Result<(), GError> {
@@ -428,6 +427,10 @@ where
             }
         }
 
+        // no need their own
+        table.remove(id1);
+        table.remove(id2);
+
         // delete the id2 and id1
         self.g.delete_node(id2)?;
         self.g.delete_node(id1)?;
@@ -440,10 +443,21 @@ where
         Ok(())
     }
 
+    /// return the last-1 ID, the last ID, and the weight between them
+    /// in case I need to run it one iter by one iter
+    pub fn one_iter(&self, start: &ID) -> (ID, ID, V) {
+        let mut clone_g = self.clone();
+        todo!()
+    }
+
+    /// find the smallest cut
+    /// if need to run one iter after iter for debugging, use one_iter
     pub fn run(&self, g: &Graph<ID, V>) {
         let mut rng = rand::thread_rng();
         // I am not sure if it is random or not
         let start_node = g.all_ids().choose(&mut rng).unwrap();
+
+        //:= next start here, the merge nodes is done
     }
 }
 
@@ -491,5 +505,65 @@ mod tests {
         let table = fw.run();
 
         dbg!(table);
+    }
+
+    #[test]
+    fn test_stoer_wagner_merge_two_nodes() {
+        let mut g = Graph::new(GraphType::Undirected);
+
+        g.insert('a', 'b', 5);
+        g.insert('a', 'f', 4);
+        g.insert('a', 'e', 1);
+        g.insert('f', 'c', 1);
+        g.insert('e', 'c', 1);
+        g.insert('e', 'd', 3);
+        g.insert('c', 'd', 6);
+        g.insert('c', 'b', 2);
+
+        let mut sw = StoerWagner::new(&g).unwrap();
+
+        sw.merge_two_nodes(&'a', &'b').unwrap();
+        //dbg!(sw.g.get(&'a'));
+        assert_eq!(
+            sw.g.get(&'a')
+                .unwrap()
+                .iter()
+                .map(|pair| (pair.id().clone(), pair.v().clone()))
+                .collect::<HashMap<_, _>>(),
+            vec![('e', 1), ('f', 4), ('c', 2)].into_iter().collect()
+        );
+
+        sw.merge_two_nodes(&'a', &'f').unwrap();
+        //dbg!(sw.g.get(&'a'));
+        assert_eq!(
+            sw.g.get(&'a')
+                .unwrap()
+                .iter()
+                .map(|pair| (pair.id().clone(), pair.v().clone()))
+                .collect::<HashMap<_, _>>(),
+            vec![('e', 1), ('c', 3)].into_iter().collect()
+        );
+
+        sw.merge_two_nodes(&'a', &'c').unwrap();
+        //dbg!(sw.g.get(&'a'));
+        assert_eq!(
+            sw.g.get(&'a')
+                .unwrap()
+                .iter()
+                .map(|pair| (pair.id().clone(), pair.v().clone()))
+                .collect::<HashMap<_, _>>(),
+            vec![('e', 2), ('d', 6)].into_iter().collect()
+        );
+
+        sw.merge_two_nodes(&'a', &'d').unwrap();
+        //dbg!(sw.g.get(&'a'));
+        assert_eq!(
+            sw.g.get(&'a')
+                .unwrap()
+                .iter()
+                .map(|pair| (pair.id().clone(), pair.v().clone()))
+                .collect::<HashMap<_, _>>(),
+            vec![('e', 5),].into_iter().collect()
+        );
     }
 }
