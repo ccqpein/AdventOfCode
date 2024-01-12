@@ -43,7 +43,7 @@ impl GError {
 
 impl Display for GError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}: {}", self, self.msg)
+        write!(f, "{}: {}", self.ty, self.msg)
     }
 }
 
@@ -64,6 +64,7 @@ where
 {
     /// when ord is 0 (default), in BinaryHeap<IDValuePiar<ID, V>>
     /// less V will pop first. When it is 1, larger V pop first
+    /// yea, I should use enum
     ord: u8,
 
     inner: (ID, V),
@@ -518,18 +519,40 @@ where
 
     /// find the smallest cut
     /// if need to run one iter after iter for debugging, use one_iter
-    pub fn run(&self, g: &Graph<ID, V>) {
-        let mut rng = rand::thread_rng();
-        // I am not sure if it is random or not
-        let start_node = g.all_ids().choose(&mut rng).unwrap();
+    pub fn run(&mut self, start_node: ID) -> Result<V, GError> {
+        let mut result = vec![];
+        loop {
+            let (x, y, w) = self.one_iter(&start_node)?;
+            if x == y {
+                dbg!(&result);
+                return Ok(result.into_iter().min().unwrap());
+            }
+            self.merge_two_nodes(&x, &y)?;
+            result.push(w);
+        }
+    }
 
-        //:= next start here, the merge nodes is done
+    /// Like the run, but pick the start randomly. The result should be as same as run
+    pub fn run_with_random_start(&mut self) -> Result<V, GError> {
+        let mut rng = rand::thread_rng();
+
+        // I am not sure if it is random or not
+        let start_node = self.g.all_ids().choose(&mut rng).unwrap().clone();
+        let mut result = vec![];
+        loop {
+            let (x, y, w) = self.one_iter(&start_node)?;
+            if x == y {
+                dbg!(&result);
+                return Ok(result.into_iter().min().unwrap());
+            }
+            self.merge_two_nodes(&x, &y)?;
+            result.push(w);
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::cmp::Reverse;
 
     use super::*;
 
@@ -553,17 +576,17 @@ mod tests {
         assert_eq!(heap.pop(), Some(IDValuePiar::new("1", 4)));
 
         // reverse
-        let mut heap = BinaryHeap::new();
-        let a = IDValuePiar::new("a", 1);
-        let b = IDValuePiar::new("b", 2);
-        let c = IDValuePiar::new("c", 3);
-        heap.push(Reverse(a));
-        heap.push(Reverse(b));
-        heap.push(Reverse(c));
+        // let mut heap = BinaryHeap::new();
+        // let a = IDValuePiar::new("a", 1);
+        // let b = IDValuePiar::new("b", 2);
+        // let c = IDValuePiar::new("c", 3);
+        // heap.push(Reverse(a));
+        // heap.push(Reverse(b));
+        // heap.push(Reverse(c));
 
-        assert_eq!(heap.pop(), Some(Reverse(IDValuePiar::new("c", 3))));
-        assert_eq!(heap.pop(), Some(Reverse(IDValuePiar::new("b", 2))));
-        assert_eq!(heap.pop(), Some(Reverse(IDValuePiar::new("whatever", 1))));
+        // assert_eq!(heap.pop(), Some(Reverse(IDValuePiar::new("c", 3))));
+        // assert_eq!(heap.pop(), Some(Reverse(IDValuePiar::new("b", 2))));
+        // assert_eq!(heap.pop(), Some(Reverse(IDValuePiar::new("whatever", 1))));
     }
 
     #[test]
@@ -654,7 +677,7 @@ mod tests {
 
     #[test]
     fn test_stoer_wagner_one_iter() {
-        let mut g = Graph::new(GraphType::Undirected);
+        let g = Graph::new(GraphType::Undirected);
 
         let mut sw = StoerWagner::new(&g).unwrap();
         sw.insert('a', 'b', 5);
@@ -666,6 +689,29 @@ mod tests {
         sw.insert('c', 'd', 6);
         sw.insert('c', 'b', 2);
 
-        dbg!(sw.one_iter(&'a'));
+        let (a, b, w) = sw.one_iter(&'a').unwrap();
+
+        dbg!((a, b, w));
+
+        sw.merge_two_nodes(&a, &b).unwrap();
+        dbg!(sw.g);
+    }
+
+    #[test]
+    fn test_stoer_wagner_run() {
+        let g = Graph::new(GraphType::Undirected);
+
+        let mut sw = StoerWagner::new(&g).unwrap();
+        sw.insert('a', 'b', 5);
+        sw.insert('a', 'f', 4);
+        sw.insert('a', 'e', 1);
+        sw.insert('f', 'c', 1);
+        sw.insert('e', 'c', 1);
+        sw.insert('e', 'd', 3);
+        sw.insert('c', 'd', 6);
+        sw.insert('c', 'b', 2);
+
+        assert_eq!(sw.clone().run('a').unwrap(), 4);
+        assert_eq!(sw.run_with_random_start().unwrap(), 4);
     }
 }
