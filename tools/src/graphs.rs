@@ -56,7 +56,6 @@ pub enum GraphType {
 }
 
 /// value pairs of each nodes in graph
-//:= need smart reverse
 #[derive(Debug, Clone)]
 pub struct IDValuePiar<ID, V>
 where
@@ -337,17 +336,39 @@ where
     ID: Hash + Clone + Eq + std::fmt::Debug + std::fmt::Display,
     V: Ord + Default + Add<Output = V> + Copy + std::fmt::Debug,
 {
-    pub fn new(g: &Graph<ID, V>) -> Self {
+    pub fn new(g: &Graph<ID, V>) -> Result<Self, GError> {
+        if g.ty != GraphType::Directed {
+            return Err(GError::new(
+                GErrorType::WrongType,
+                "FloydWarshall has to be directed graph",
+            ));
+        }
         let mut g = g.clone();
         // add self node
         g.graph
             .iter_mut()
             .for_each(|(id, v)| v.push(IDValuePiar::new(id.clone(), V::default())));
 
-        Self { g: g.clone() }
+        Ok(Self { g })
     }
 
-    //:= add insert of FloydWarshall
+    /// Insert for FloydWarshall.
+    /// FloydWarshall's node need its own node inside
+    pub fn insert(&mut self, id: ID, other_id: ID, v: V) {
+        // add itself
+        self.g
+            .graph
+            .get_mut(&id)
+            .unwrap()
+            .push(IDValuePiar::new(id.clone(), V::default()));
+        // add itself
+        self.g
+            .graph
+            .get_mut(&other_id)
+            .unwrap()
+            .push(IDValuePiar::new(other_id.clone(), V::default()));
+        self.g.insert(id, other_id, v);
+    }
 
     /// this run with the graph.
     pub fn run(&self) -> HashMap<ID, HashMap<ID, Option<V>>> {
@@ -420,7 +441,7 @@ where
 pub struct StoerWagner<ID, V>
 where
     ID: Hash + Clone + Eq,
-    V: Ord + Clone + std::ops::Add + std::ops::AddAssign + std::default::Default,
+    V: Ord + Clone + std::ops::Add + std::default::Default,
 {
     g: Graph<ID, V>,
 }
@@ -439,6 +460,10 @@ where
             ));
         }
         Ok(Self { g: g.clone() })
+    }
+
+    pub fn nodes_len(&self) -> usize {
+        self.g.len()
     }
 
     /// Insert for StoerWagner. Since the StoerWagner need the largest weight node
@@ -492,7 +517,7 @@ where
         let mut weight = Default::default();
 
         loop {
-            dbg!(clone_g.g.get(start));
+            //:= DEL: dbg!(clone_g.g.get(start));
             match clone_g.g.get(start) {
                 Some(heap) => match heap.peek() {
                     Some(next_node) => {
@@ -511,9 +536,9 @@ where
             }
 
             clone_g.merge_two_nodes(start, &next)?;
-            dbg!(&this);
-            dbg!(&next);
-            dbg!(&weight);
+            //:= DEL: dbg!(&this);
+            //:= DEL: dbg!(&next);
+            //:= DEL: dbg!(&weight);
         }
     }
 
@@ -542,7 +567,7 @@ where
         loop {
             let (x, y, w) = self.one_iter(&start_node)?;
             if x == y {
-                dbg!(&result);
+                //dbg!(&result);
                 return Ok(result.into_iter().min().unwrap());
             }
             self.merge_two_nodes(&x, &y)?;
@@ -605,7 +630,7 @@ mod tests {
         // g.insert(3, 3, 0);
         // g.insert(4, 4, 0);
 
-        let fw = FloydWarshall::new(&g);
+        let fw = FloydWarshall::new(&g).unwrap();
         let table = fw.run();
 
         dbg!(table);

@@ -163,8 +163,8 @@ fn day1_2(lines: &[String]) -> i32 {
 }
 
 fn main() {
-    let input = read_file_by_line("../inputs/day1_demo.input");
-    //let input = read_file_by_line("../inputs/day1.input");
+    //let input = read_file_by_line("../inputs/day1_demo.input");
+    let input = read_file_by_line("../inputs/day1.input");
     //println!("{:?}", input);
     println!("{}", day1(&input));
     println!("{}", day1_with_regex(&input));
