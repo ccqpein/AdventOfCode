@@ -2,7 +2,7 @@ use rand::seq::IteratorRandom;
 use std::collections::HashSet;
 use std::collections::{BinaryHeap, HashMap};
 use std::error::Error;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::hash::Hash;
 use std::ops::Add;
 
@@ -49,25 +49,38 @@ impl Display for GError {
 
 impl Error for GError {}
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum GraphType {
     Undirected,
     Directed,
 }
 
 /// value pairs of each nodes in graph
+//:= need smart reverse
 #[derive(Debug, Clone)]
 pub struct IDValuePiar<ID, V>
 where
     V: Ord,
 {
+    /// when ord is 0 (default), in BinaryHeap<IDValuePiar<ID, V>>
+    /// less V will pop first. When it is 1, larger V pop first
+    ord: u8,
+
     inner: (ID, V),
 }
 
 impl<ID, V: Ord> IDValuePiar<ID, V> {
     #[must_use]
     fn new(id: ID, v: V) -> Self {
-        Self { inner: (id, v) }
+        Self {
+            ord: 0,
+            inner: (id, v),
+        }
+    }
+
+    fn ord(mut self, ord: u8) -> Self {
+        self.ord = ord;
+        self
     }
 
     fn id(&self) -> &ID {
@@ -85,13 +98,21 @@ impl<ID, V: Ord> Eq for IDValuePiar<ID, V> {
 
 impl<ID, V: Ord> Ord for IDValuePiar<ID, V> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        other.inner.1.cmp(&self.inner.1)
+        if self.ord == 0 {
+            other.inner.1.cmp(&self.inner.1)
+        } else {
+            self.inner.1.cmp(&other.inner.1)
+        }
     }
 }
 
 impl<ID, V: Ord> PartialOrd for IDValuePiar<ID, V> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        other.inner.1.partial_cmp(&self.inner.1)
+        if self.ord == 0 {
+            other.inner.1.partial_cmp(&self.inner.1)
+        } else {
+            self.inner.1.partial_cmp(&other.inner.1)
+        }
     }
 }
 
@@ -103,7 +124,7 @@ impl<ID, V: Ord> PartialEq for IDValuePiar<ID, V> {
 
 /// graph for store all nodes
 /// V is the weight between the nodes
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Graph<ID, V>
 where
     ID: Hash + Eq,
@@ -156,29 +177,39 @@ where
 
     /// insert neighbour node (one direction)
     pub fn insert(&mut self, id: ID, other_id: ID, v: V) {
+        // default ord is 0
+        self.insert_with_ord(id, other_id, v, 0);
+    }
+
+    /// Insert with the order of id-value pair
+    pub fn insert_with_ord(&mut self, id: ID, other_id: ID, v: V, ord: u8) {
         match self.ty {
             GraphType::Undirected => {
                 self.graph
                     .entry(id.clone())
                     .or_insert(BinaryHeap::new())
-                    .push(IDValuePiar::new(other_id.clone(), v.clone()));
+                    .push(IDValuePiar::new(other_id.clone(), v.clone()).ord(ord));
 
                 self.graph
                     .entry(other_id)
                     .or_insert(BinaryHeap::new())
-                    .push(IDValuePiar::new(id, v));
+                    .push(IDValuePiar::new(id, v).ord(ord));
             }
             GraphType::Directed => {
                 self.graph
                     .entry(id.clone())
                     .or_insert(BinaryHeap::new())
-                    .push(IDValuePiar::new(other_id, v));
+                    .push(IDValuePiar::new(other_id, v).ord(ord));
             }
         }
     }
 
     pub fn get(&self, k: &ID) -> Option<&BinaryHeap<IDValuePiar<ID, V>>> {
         self.graph.get(k)
+    }
+
+    pub fn get_mut(&mut self, k: &ID) -> Option<&mut BinaryHeap<IDValuePiar<ID, V>>> {
+        self.graph.get_mut(k)
     }
 
     /// get the number of nodes of this graph
@@ -191,7 +222,6 @@ where
         self.graph.keys()
     }
 
-    //:= need test
     /// delete the node from graph. only for undirected graph so far.
     /// because find which node direct to this node is expensive by now (2024-01-07).
     pub fn delete_node(&mut self, id: &ID) -> Result<(), GError> {
@@ -316,6 +346,8 @@ where
         Self { g: g.clone() }
     }
 
+    //:= add insert of FloydWarshall
+
     /// this run with the graph.
     pub fn run(&self) -> HashMap<ID, HashMap<ID, Option<V>>> {
         let mut distances: HashMap<ID, HashMap<ID, Option<V>>> = HashMap::new();
@@ -383,6 +415,7 @@ where
 
 /// Stoer–Wagner algorithm.
 /// get the solve the minimum cut problem
+#[derive(Clone, Debug)]
 pub struct StoerWagner<ID, V>
 where
     ID: Hash + Clone + Eq,
@@ -393,10 +426,10 @@ where
 
 impl<ID, V> StoerWagner<ID, V>
 where
-    ID: Hash + Clone + Eq,
-    V: Ord + Clone + std::ops::Add + std::ops::AddAssign + std::default::Default,
+    ID: Hash + Clone + Eq + Debug,
+    V: Ord + Clone + Add + std::ops::AddAssign + Default + Debug,
 {
-    /// will keep one graph copy inside
+    /// Will keep one graph copy inside
     pub fn new(g: &Graph<ID, V>) -> Result<Self, GError> {
         if g.ty == GraphType::Directed {
             return Err(GError::new(
@@ -405,6 +438,12 @@ where
             ));
         }
         Ok(Self { g: g.clone() })
+    }
+
+    /// Insert for StoerWagner. Since the StoerWagner need the largest weight node
+    /// pop out first. It needs ord 1 when insert ID-Value pair
+    pub fn insert(&mut self, id: ID, other_id: ID, v: V) {
+        self.g.insert_with_ord(id, other_id, v, 1);
     }
 
     /// merge two nodes, the new id is the first id
@@ -437,7 +476,7 @@ where
 
         // re-insert the id1
         for (other_id, v) in table {
-            self.g.insert(id1.clone(), other_id.clone(), v);
+            self.insert(id1.clone(), other_id.clone(), v);
         }
 
         Ok(())
@@ -445,9 +484,36 @@ where
 
     /// return the last-1 ID, the last ID, and the weight between them
     /// in case I need to run it one iter by one iter
-    pub fn one_iter(&self, start: &ID) -> (ID, ID, V) {
+    pub fn one_iter(&self, start: &ID) -> Result<(ID, ID, V), GError> {
         let mut clone_g = self.clone();
-        todo!()
+        let mut this = start.clone();
+        let mut next = start.clone();
+        let mut weight = Default::default();
+
+        loop {
+            dbg!(clone_g.g.get(start));
+            match clone_g.g.get(start) {
+                Some(heap) => match heap.peek() {
+                    Some(next_node) => {
+                        this = next;
+                        next = next_node.id().clone();
+                        weight = next_node.v().clone()
+                    }
+                    None => {
+                        return Err(GError::new(
+                            GErrorType::CorruptedData,
+                            "heap shouldn't be empty ",
+                        ))
+                    }
+                },
+                None => return Ok((this, next, weight)),
+            }
+
+            clone_g.merge_two_nodes(start, &next)?;
+            dbg!(&this);
+            dbg!(&next);
+            dbg!(&weight);
+        }
     }
 
     /// find the smallest cut
@@ -463,6 +529,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::cmp::Reverse;
+
     use super::*;
 
     #[test]
@@ -483,6 +551,19 @@ mod tests {
 
         // `ID` doesn't compare in Eq trait implement
         assert_eq!(heap.pop(), Some(IDValuePiar::new("1", 4)));
+
+        // reverse
+        let mut heap = BinaryHeap::new();
+        let a = IDValuePiar::new("a", 1);
+        let b = IDValuePiar::new("b", 2);
+        let c = IDValuePiar::new("c", 3);
+        heap.push(Reverse(a));
+        heap.push(Reverse(b));
+        heap.push(Reverse(c));
+
+        assert_eq!(heap.pop(), Some(Reverse(IDValuePiar::new("c", 3))));
+        assert_eq!(heap.pop(), Some(Reverse(IDValuePiar::new("b", 2))));
+        assert_eq!(heap.pop(), Some(Reverse(IDValuePiar::new("whatever", 1))));
     }
 
     #[test]
@@ -523,7 +604,7 @@ mod tests {
         let mut sw = StoerWagner::new(&g).unwrap();
 
         sw.merge_two_nodes(&'a', &'b').unwrap();
-        //dbg!(sw.g.get(&'a'));
+        //dbg!(sw.g.get(&'a').unwrap());
         assert_eq!(
             sw.g.get(&'a')
                 .unwrap()
@@ -565,5 +646,26 @@ mod tests {
                 .collect::<HashMap<_, _>>(),
             vec![('e', 5),].into_iter().collect()
         );
+
+        sw.merge_two_nodes(&'a', &'e').unwrap();
+        //dbg!(sw.g.get(&'a'));
+        assert!(sw.g.get(&'a').is_none());
+    }
+
+    #[test]
+    fn test_stoer_wagner_one_iter() {
+        let mut g = Graph::new(GraphType::Undirected);
+
+        let mut sw = StoerWagner::new(&g).unwrap();
+        sw.insert('a', 'b', 5);
+        sw.insert('a', 'f', 4);
+        sw.insert('a', 'e', 1);
+        sw.insert('f', 'c', 1);
+        sw.insert('e', 'c', 1);
+        sw.insert('e', 'd', 3);
+        sw.insert('c', 'd', 6);
+        sw.insert('c', 'b', 2);
+
+        dbg!(sw.one_iter(&'a'));
     }
 }
