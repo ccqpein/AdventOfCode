@@ -437,6 +437,7 @@ where
 
 /// Stoer–Wagner algorithm.
 /// get the solve the minimum cut problem
+/// https://www.youtube.com/watch?v=AtkEpr7dsW4&t=9s
 #[derive(Clone, Debug)]
 pub struct StoerWagner<ID, V>
 where

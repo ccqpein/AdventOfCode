@@ -1,6 +1,9 @@
 use regex::{Captures, Regex};
 use tools::*;
 
+/// for some reason, the answer isn't consistant because the graph use binary heap
+/// and the same value (weigth 1) in binary heap cannot making sure which to pop first
+
 fn day25(lines: &[String]) -> usize {
     let (mut sw, start_node) = parse_lines(lines);
     let mut step = 0;
