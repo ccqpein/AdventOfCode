@@ -330,7 +330,6 @@ fn find_most_geodes(blueprint: &Blueprint, mut remaining_turns: i32, mut state: 
     return max_geodes;
 }
 
-//:= STUDY
 fn main() {
     // Part1
     let input = fs::read_to_string("./inputs/day19.input").unwrap();

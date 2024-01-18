@@ -110,6 +110,5 @@ fn main() {
     let mut a = Intcode::new(&intcode);
     a.run(None);
 
-    //:= MARK: if answer is 0, run several times.
     println!("{:?}", day13_part2(&mut a));
 }

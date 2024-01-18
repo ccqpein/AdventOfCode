@@ -112,22 +112,3 @@ all rest original elements sum"
 
 (defsetf nth-nest %set-nth-nest)
 
-;;:= need learn how to do this
-;; (defsetf nth-nest (l coorp) (new-value)
-;;   ;;`(set-nth-nest ,l ,coorp ,new-value)
-;;   (print coorp)
-;;   (let ((inner-coorp (eval coorp)))
-;;     `(setf ,(loop
-;;               for i in inner-coorp
-;;               do (setf l `(nth ,i ,l))
-;;               finally (return l))
-;;            ,new-value)))
-;;   )
-
-;; (defmacro loop-array (dims syms &rest rest)
-;;   (if (not dims)
-;;       (cons 'progn rest)
-;;       (let ((xn (car dims)))
-;;         `(loop
-;;            for ,(car syms) from 0 below ,xn
-;;            do (loop-array ,(cdr dims) ,(cdr syms) ,@rest)))))

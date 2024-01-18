@@ -518,7 +518,6 @@ where
         let mut weight = Default::default();
 
         loop {
-            //:= DEL: dbg!(clone_g.g.get(start));
             match clone_g.g.get(start) {
                 Some(heap) => match heap.peek() {
                     Some(next_node) => {
@@ -537,9 +536,6 @@ where
             }
 
             clone_g.merge_two_nodes(start, &next)?;
-            //:= DEL: dbg!(&this);
-            //:= DEL: dbg!(&next);
-            //:= DEL: dbg!(&weight);
         }
     }
 

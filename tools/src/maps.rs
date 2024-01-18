@@ -149,7 +149,6 @@ impl<T: Clone> Map<T> {
     }
 }
 
-//:= need re-write a real map display
 impl<T: Display + Debug> Display for Map<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for line in &self.inner {
