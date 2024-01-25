@@ -394,17 +394,20 @@ Need the session in cookie for authorizing."
 
 (defun expand-match-branch (str block patterns forms)
   (case patterns
-    ((t 'otherwise) `(progn ,@forms))
+    ((t 'otherwise) `(return-from ,block (progn ,@forms)))
     (t (loop with regex = '("^")
              and vars = '()
+             and ind = 0
              for x in patterns
              do (cond ((stringp x)
                        (push x regex))
                       ((symbolp x)
                        (push "(.*)" regex)
-                       (push x vars))
+                       (push (list x ind) vars)
+                       (incf ind))
                       (t (error "only symbol and string allowed in patterns")))
              finally (push "$" regex)
+             finally (setf vars (reverse vars))
              finally (return (let ((whole-str (gensym))
                                    (regs (gensym)))
                                `(multiple-value-bind (,whole-str ,regs)
@@ -413,10 +416,12 @@ Need the session in cookie for authorizing."
                                      ,str)
                                   (declare (ignore ,whole-str))
                                   (when ,regs
-                                    (let ,(reverse vars)
-                                      ,@(loop for ind from 0 below (length vars)
-                                              collect `(setf ,(nth ind (reverse vars))
-                                                             (elt ,regs ,ind)))
+                                    (let ,(loop for (v ind) in vars
+                                                unless (eq v '_)
+                                                  collect v)
+                                      ,@(loop for (v ind) in vars
+                                              unless (eq v '_)
+                                                collect `(setf ,v (elt ,regs ,ind)))
                                       (return-from ,block
                                         (progn ,@forms)))))))))))
 
@@ -462,6 +467,3 @@ Need the session in cookie for authorizing."
              while b
              sum (matrix-op a b))
        2)))
-
-;;:= PICK algorithm
-;;(defun pick)
