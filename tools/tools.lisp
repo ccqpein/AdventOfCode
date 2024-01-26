@@ -417,15 +417,15 @@ Need the session in cookie for authorizing."
                                   (declare (ignore ,whole-str))
                                   (when ,regs
                                     (let ,(loop for (v ind) in vars
-                                                unless (eq v '_)
+                                                unless (string= (symbol-name v) "_")
                                                   collect v)
                                       ,@(loop for (v ind) in vars
-                                              unless (eq v '_)
+                                              unless (string= (symbol-name v) "_")
                                                 collect `(setf ,v (elt ,regs ,ind)))
                                       (return-from ,block
                                         (progn ,@forms)))))))))))
 
-(defmacro str-match (str &body match-branches)
+(defmacro string-match (str &body match-branches)
   (let ((block-sym (gensym)))
     `(block ,block-sym
        ,@(loop for statement in match-branches
