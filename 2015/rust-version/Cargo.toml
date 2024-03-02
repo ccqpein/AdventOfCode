@@ -7,3 +7,4 @@ edition = "2021"
 regex = "1.10.2"
 tools = { path = "../../tools" }
 itertools = "0.12"
+md5 = "0.7.0"
