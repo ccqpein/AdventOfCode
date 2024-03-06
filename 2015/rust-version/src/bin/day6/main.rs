@@ -84,10 +84,60 @@ fn day6(input: &[String]) -> usize {
         .sum::<usize>()
 }
 
+fn day6_2(input: &[String]) -> usize {
+    let re = Regex::new(r"^(.+) (\d+),(\d+) through (\d+),(\d+)$").unwrap();
+    let mut whole_map = [[0; 1000]; 1000];
+    for line in input {
+        let (_, [comm, x1, y1, x2, y2]) = re.captures(line).unwrap().extract();
+        let (x1, y1, x2, y2) = (
+            x1.parse::<usize>().unwrap(),
+            y1.parse::<usize>().unwrap(),
+            x2.parse::<usize>().unwrap(),
+            y2.parse::<usize>().unwrap(),
+        );
+        match comm {
+            "turn on" => {
+                for y in y1.min(y2)..=y1.max(y2) {
+                    for x in x1.min(x2)..=x1.max(x2) {
+                        whole_map[y][x] += 1;
+                    }
+                }
+            }
+            "turn off" => {
+                for y in y1.min(y2)..=y1.max(y2) {
+                    for x in x1.min(x2)..=x1.max(x2) {
+                        if whole_map[y][x] != 0 {
+                            whole_map[y][x] -= 1;
+                        }
+                    }
+                }
+            }
+            "toggle" => {
+                for y in y1.min(y2)..=y1.max(y2) {
+                    for x in x1.min(x2)..=x1.max(x2) {
+                        whole_map[y][x] += 2;
+                    }
+                }
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    whole_map
+        .iter()
+        .map(|l| l.iter().sum::<usize>())
+        .sum::<usize>()
+}
+
 fn main() {
     let input = read_file_by_line("../inputs/day6.input");
     //let input = vec!["turn on 0,0 through 999,999".to_string()];
     println!("{:?}", day6(&input));
+
+    //let input = vec!["toggle 0,0 through 999,999".to_string()];
+    //let input = vec!["turn on 0,0 through 0,0".to_string()];
+
+    println!("{:?}", day6_2(&input));
 }
 
 #[cfg(test)]
