@@ -1,4 +1,5 @@
 use rand::seq::IteratorRandom;
+use std::clone;
 use std::collections::HashSet;
 use std::collections::{BinaryHeap, HashMap};
 use std::error::Error;
@@ -83,11 +84,11 @@ impl<ID, V: Ord> IDValuePiar<ID, V> {
         self
     }
 
-    fn id(&self) -> &ID {
+    pub fn id(&self) -> &ID {
         &self.inner.0
     }
 
-    fn v(&self) -> &V {
+    pub fn v(&self) -> &V {
         &self.inner.1
     }
 }
@@ -358,14 +359,14 @@ where
         // add itself
         self.g
             .graph
-            .get_mut(&id)
-            .unwrap()
+            .entry(id.clone())
+            .or_insert(Default::default())
             .push(IDValuePiar::new(id.clone(), V::default()));
         // add itself
         self.g
             .graph
-            .get_mut(&other_id)
-            .unwrap()
+            .entry(other_id.clone())
+            .or_insert(Default::default())
             .push(IDValuePiar::new(other_id.clone(), V::default()));
         self.g.insert(id, other_id, v);
     }
