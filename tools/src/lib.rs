@@ -4,10 +4,10 @@ use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::Path;
 
+mod custom_carrier;
 /// store some useful tool for shortest path
 mod graphs;
 mod maps;
-
 mod stack_machine;
 
 pub use maps::*;
