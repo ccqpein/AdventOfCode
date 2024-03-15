@@ -1,14 +1,13 @@
-use core::ops::Add;
 use std::fmt::Debug;
 
-trait Unit {
+//:= rename to CarryableUnit?
+
+pub trait Unit {
     type UnitResult: PosResult;
-    //:= bountry ?
     fn next(&self) -> Self::UnitResult;
-    //:= after bountry, next_times
 }
 
-trait UnitMut: Unit {
+pub trait UnitMut: Unit {
     type UnitMutResult: PosResult;
     fn next_mut(&mut self) -> Self::UnitMutResult;
 }
@@ -32,36 +31,85 @@ impl<T: Unit + Debug> PosResult for (T, bool) {
 ///////////////////////////////////////////
 // demo implement
 
-impl Unit for char {
-    type UnitResult = (char, bool);
-    fn next(&self) -> Self::UnitResult {
-        match self {
-            'a' => ('b', false),
-            'b' => ('c', false),
-            'c' => ('a', true),
-            _ => (*self, false),
+// impl Unit for char {
+//     type UnitResult = (char, bool);
+//     fn next(&self) -> Self::UnitResult {
+//         match self {
+//             'a' => ('b', false),
+//             'b' => ('c', false),
+//             'c' => ('a', true),
+//             _ => (*self, false),
+//         }
+//     }
+// }
+
+// impl UnitMut for char {
+//     type UnitMutResult = bool;
+//     fn next_mut(&mut self) -> Self::UnitMutResult {
+//         let a = self.next();
+//         *self = a.0;
+//         a.carried()
+//     }
+// }
+
+////////////////
+
+#[derive(Debug)]
+pub struct AlphaBetLowCase(u8);
+
+impl AlphaBetLowCase {
+    pub fn byte(&self) -> &u8 {
+        &self.0
+    }
+}
+
+impl TryFrom<u8> for AlphaBetLowCase {
+    type Error = String;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        if value < 97 || value > 122 {
+            Err("not in alphabet".to_string())
+        } else {
+            Ok(AlphaBetLowCase(value))
         }
     }
 }
 
-impl UnitMut for char {
-    type UnitMutResult = bool;
-    fn next_mut(&mut self) -> Self::UnitMutResult {
-        let a = self.next();
-        *self = a.0;
-        a.carried()
+impl Unit for AlphaBetLowCase {
+    type UnitResult = (AlphaBetLowCase, bool);
+
+    fn next(&self) -> Self::UnitResult {
+        if self.0 == 122 {
+            (Self(97), true)
+        } else {
+            (Self(self.0 + 1), false)
+        }
     }
 }
 
-////////////////
+impl UnitMut for AlphaBetLowCase {
+    type UnitMutResult = bool;
 
-enum Orientation {
+    fn next_mut(&mut self) -> Self::UnitMutResult {
+        if self.0 == 122 {
+            self.0 = 97;
+            true
+        } else {
+            self.0 += 1;
+            false
+        }
+    }
+}
+
+////////////////////////////
+
+#[derive(Clone, Copy, Debug)]
+pub enum Orientation {
     ToLeft,
     ToRight,
     FromCenter,
 }
 
-trait Align<T: Unit> {
+pub trait Align<T: UnitMut> {
     fn index(&self) -> usize;
 
     fn get_mut(&mut self, index: usize) -> Option<&mut T>;
@@ -70,7 +118,7 @@ trait Align<T: Unit> {
 
     fn next_on(&mut self, index: usize, ori: &Orientation) {
         let a = match self.get_mut(index) {
-            Some(aa) => aa.next(),
+            Some(aa) => aa.next_mut(),
             None => return,
         };
 
@@ -95,54 +143,67 @@ trait Align<T: Unit> {
     }
 }
 
-trait IntoAlign<T: Unit> {
+pub trait IntoAlign<T: UnitMut> {
     type Alignor: Align<T>;
-    fn into_align(self, org: Orientation) -> Self::Alignor;
+    type Error;
+    fn into_align(self, org: Orientation) -> Result<Self::Alignor, Self::Error>;
 }
 
 ////////////////////
 ////////////////////
 
-struct VecAlign<T: Unit> {
+#[derive(Debug)]
+pub struct VecAlign<T: UnitMut> {
     inner: Vec<T>,
     this: usize,
     org: Orientation,
 }
 
-// impl<T: Unit> Align<T> for VecAlign<T> {
-//     fn index(&self) -> usize {
-//         todo!()
-//     }
+impl<T: UnitMut> VecAlign<T> {
+    pub fn inner(&self) -> &Vec<T> {
+        &self.inner
+    }
 
-//     fn next_on(&mut self, ind: usize, ori: Orientation) {
-//         todo!()
-//     }
+    pub fn inner_mut(&mut self) -> &mut Vec<T> {
+        &mut self.inner
+    }
+}
 
-//     fn orientation(&self) -> Orientation {
-//         todo!()
-//     }
+impl<T: UnitMut> Align<T> for VecAlign<T> {
+    fn index(&self) -> usize {
+        self.this
+    }
 
-//     fn get_mut(&mut self, index: usize) -> &mut T {
-//         todo!()
-//     }
-// }
+    fn get_mut(&mut self, index: usize) -> Option<&mut T> {
+        self.inner.get_mut(index)
+    }
 
-// impl<T: Unit> IntoAlign<T> for Vec<T> {
-//     type Alignor = VecAlign<T>;
+    fn orientation(&self) -> Orientation {
+        self.org
+    }
+}
 
-//     fn into_align(self, org: Orientation) -> Self::Alignor {
-//         let len = self.len();
-//         VecAlign {
-//             inner: self,
-//             this: match org {
-//                 Orientation::ToLeft => len,
-//                 Orientation::ToRight => 0,
-//                 Orientation::FromCenter => len / 2,
-//             },
-//             org,
-//         }
-//     }
-// }
+impl<T: UnitMut> IntoAlign<T> for Vec<T> {
+    type Alignor = VecAlign<T>;
+    type Error = String;
+
+    fn into_align(self, org: Orientation) -> Result<Self::Alignor, Self::Error> {
+        let len = self.len();
+        if len != 0 {
+            Ok(VecAlign {
+                inner: self,
+                this: match org {
+                    Orientation::ToLeft => len - 1,
+                    Orientation::ToRight => 0,
+                    Orientation::FromCenter => (len - 1) / 2,
+                },
+                org,
+            })
+        } else {
+            Err("vector length is 0".into())
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -150,12 +211,16 @@ mod tests {
 
     #[test]
     fn test_vec_align() {
-        let mut c = 'a';
-        dbg!(<char as UnitMut>::next_mut(&mut c));
-        dbg!(c);
-        dbg!(c.next_mut());
-        dbg!(c);
-        dbg!(c.next_mut());
-        dbg!(c);
+        let mut input = "zzz"
+            .bytes()
+            .map(|b| b.try_into().unwrap())
+            .collect::<Vec<AlphaBetLowCase>>()
+            .into_align(Orientation::ToLeft)
+            .unwrap();
+        input.next();
+        dbg!(&input); // should be aaa
+
+        input.next();
+        dbg!(&input); // should be aab
     }
 }
