@@ -25,10 +25,10 @@ impl<T: Clone> Map<T> {
         self.c_len
     }
 
-    pub fn get(&self, (x, y): (usize, usize)) -> Option<T> {
+    pub fn get(&self, (x, y): (usize, usize)) -> Option<&T> {
         if let Some(r) = self.inner.get(x) {
             if let Some(c) = r.get(y) {
-                Some(c.clone())
+                Some(c)
             } else {
                 None
             }
@@ -49,10 +49,7 @@ impl<T: Clone> Map<T> {
         MapIterMut::new(self)
     }
 
-    pub fn get_around(
-        &self,
-        (r, c): (usize, usize),
-    ) -> impl Iterator<Item = ((usize, usize), T)> + '_ {
+    pub fn get_around(&self, (r, c): (usize, usize)) -> impl Iterator<Item = ((usize, usize), &T)> {
         let (r, c) = (r as isize, c as isize);
         [
             (r - 1, c - 1),
@@ -71,7 +68,7 @@ impl<T: Clone> Map<T> {
             } else {
                 Some((
                     (r as usize, c as usize),
-                    self.inner[r as usize][c as usize].clone(),
+                    self.inner.get(r as usize).unwrap().get(c as usize).unwrap(),
                 ))
             }
         })
@@ -80,7 +77,7 @@ impl<T: Clone> Map<T> {
     pub fn get_around_horiz(
         &self,
         (r, c): (usize, usize),
-    ) -> impl Iterator<Item = ((usize, usize), T)> + '_ {
+    ) -> impl Iterator<Item = ((usize, usize), &T)> {
         let (r, c) = (r as isize, c as isize);
         [(r - 1, c), (r, c - 1), (r, c + 1), (r + 1, c)]
             .into_iter()
@@ -88,7 +85,7 @@ impl<T: Clone> Map<T> {
                 if r >= 0 && c >= 0 && (r as usize) < self.r_len && (c as usize) < self.c_len {
                     Some((
                         (r as usize, c as usize),
-                        self.inner[r as usize][c as usize].clone(),
+                        self.inner.get(r as usize).unwrap().get(c as usize).unwrap(),
                     ))
                 } else {
                     None
@@ -101,7 +98,7 @@ impl<T: Clone> Map<T> {
     pub fn go_through_up(
         &self,
         (r, c): (usize, usize),
-    ) -> impl Iterator<Item = ((usize, usize), T)> + '_ {
+    ) -> impl Iterator<Item = ((usize, usize), &T)> {
         let coops = (0..=r).rev().into_iter().map(move |rr| (rr, c));
         coops.filter_map(|(rr, cc)| match self.get((rr, cc)) {
             Some(v) => Some(((rr, cc), v)),
@@ -114,7 +111,7 @@ impl<T: Clone> Map<T> {
     pub fn go_through_down(
         &self,
         (r, c): (usize, usize),
-    ) -> impl Iterator<Item = ((usize, usize), T)> + '_ {
+    ) -> impl Iterator<Item = ((usize, usize), &T)> {
         let coops = (r..self.r_len).into_iter().map(move |rr| (rr, c));
         coops.filter_map(|(rr, cc)| match self.get((rr, cc)) {
             Some(v) => Some(((rr, cc), v)),
@@ -127,7 +124,7 @@ impl<T: Clone> Map<T> {
     pub fn go_through_left(
         &self,
         (r, c): (usize, usize),
-    ) -> impl Iterator<Item = ((usize, usize), T)> + '_ {
+    ) -> impl Iterator<Item = ((usize, usize), &T)> {
         let coops = (0..=c).rev().into_iter().map(move |cc| (r, cc));
         coops.filter_map(|(rr, cc)| match self.get((rr, cc)) {
             Some(v) => Some(((rr, cc), v)),
@@ -140,7 +137,7 @@ impl<T: Clone> Map<T> {
     pub fn go_through_right(
         &self,
         (r, c): (usize, usize),
-    ) -> impl Iterator<Item = ((usize, usize), T)> + '_ {
+    ) -> impl Iterator<Item = ((usize, usize), &T)> {
         let coops = (c..self.c_len).into_iter().map(move |cc| (r, cc));
         coops.filter_map(|(rr, cc)| match self.get((rr, cc)) {
             Some(v) => Some(((rr, cc), v)),
@@ -319,7 +316,7 @@ mod tests {
 
     #[test]
     fn map_go_through_test() {
-        let mut m = Map::from(vec![
+        let m = Map::from(vec![
             vec![3, 0, 3, 7, 3],
             vec![2, 5, 5, 1, 2],
             vec![6, 5, 3, 3, 2],
@@ -328,22 +325,30 @@ mod tests {
         ]);
 
         assert_eq!(
-            m.go_through_up((1, 2)).collect::<Vec<_>>(),
+            m.go_through_up((1, 2))
+                .map(|((x, y), a)| ((x, y), *a))
+                .collect::<Vec<_>>(),
             vec![((1, 2), 5), ((0, 2), 3)]
         );
 
         assert_eq!(
-            m.go_through_down((1, 2)).collect::<Vec<_>>(),
+            m.go_through_down((1, 2))
+                .map(|((x, y), a)| ((x, y), *a))
+                .collect::<Vec<_>>(),
             vec![((1, 2), 5), ((2, 2), 3), ((3, 2), 5), ((4, 2), 3)]
         );
 
         assert_eq!(
-            m.go_through_left((1, 2)).collect::<Vec<_>>(),
+            m.go_through_left((1, 2))
+                .map(|((x, y), a)| ((x, y), *a))
+                .collect::<Vec<_>>(),
             vec![((1, 2), 5), ((1, 1), 5), ((1, 0), 2)]
         );
 
         assert_eq!(
-            m.go_through_right((1, 2)).collect::<Vec<_>>(),
+            m.go_through_right((1, 2))
+                .map(|((x, y), a)| ((x, y), *a))
+                .collect::<Vec<_>>(),
             vec![((1, 2), 5), ((1, 3), 1), ((1, 4), 2)]
         );
     }
