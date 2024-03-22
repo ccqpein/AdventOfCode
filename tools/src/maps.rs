@@ -94,7 +94,7 @@ impl<T: Clone> Map<T> {
     }
 
     /// get the line from coordinate to upper edge.
-    /// order is from coord to edge. including the coop element self.
+    /// order is from coord to edge. including the start element self.
     pub fn go_through_up(
         &self,
         (r, c): (usize, usize),
@@ -107,7 +107,7 @@ impl<T: Clone> Map<T> {
     }
 
     /// get the line from coordinate to bottom edge.
-    /// order is from coord to edge. including the coop element self.
+    /// order is from coord to edge. including the start element self.
     pub fn go_through_down(
         &self,
         (r, c): (usize, usize),
@@ -120,7 +120,7 @@ impl<T: Clone> Map<T> {
     }
 
     /// get the line from coordinate to left edge.
-    /// order is from coord to edge. including the coop element self.
+    /// order is from coord to edge. including the start element self.
     pub fn go_through_left(
         &self,
         (r, c): (usize, usize),
@@ -133,7 +133,7 @@ impl<T: Clone> Map<T> {
     }
 
     /// get the line from coordinate to right edge.
-    /// order is from coord to edge. including the coop element self.
+    /// order is from coord to edge. including the start element self.
     pub fn go_through_right(
         &self,
         (r, c): (usize, usize),
@@ -143,6 +143,24 @@ impl<T: Clone> Map<T> {
             Some(v) => Some(((rr, cc), v)),
             None => None,
         })
+    }
+
+    /// give map four corners, clockwised. they are indexable coop
+    /// if map just one row, still return four corners but two of them are duplication
+    pub fn four_corners(&self) -> [(usize, usize); 4] {
+        let r = if self.row_len() == 0 {
+            0
+        } else {
+            self.row_len() - 1
+        };
+
+        let c = if self.col_len() == 0 {
+            0
+        } else {
+            self.col_len() - 1
+        };
+
+        [(0, 0), (0, c), (r, c), (r, 0)]
     }
 }
 
