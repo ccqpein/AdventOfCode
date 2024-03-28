@@ -50,9 +50,10 @@ fn status_settle(p: &mut Player, b: &mut Boss, status: &mut Vec<Status>) {
         match s {
             Status::Shield(n) => {
                 if *n != 0 {
-                    *n -= 1
+                    *n -= 1;
+                    p.armor = 7;
                 } else {
-                    p.armor -= 7;
+                    p.armor = 0;
                 }
             }
             Status::Poison(n) => {
@@ -77,22 +78,34 @@ fn player_turn(
     mut b: Boss,
     mut status: Vec<Status>,
     cache: &mut HashMap<(Player, Boss, Vec<Status>, bool), Option<usize>>,
+    p2: bool,
 ) -> Option<usize> {
     if let Some(d) = cache.get(&(p.clone(), b.clone(), status.clone(), true)) {
         return *d;
     }
 
-    status_settle(&mut p, &mut b, &mut status);
+    let mut ss = status.clone();
+    let mut pp = p.clone();
+    let mut bb = b.clone();
 
-    if p.hp <= 0 {
+    if p2 {
+        pp.hp -= 1;
+        if pp.hp <= 0 {
+            return None;
+        }
+    }
+
+    status_settle(&mut pp, &mut bb, &mut ss);
+
+    if pp.hp <= 0 {
         return None;
     }
 
-    if b.hp <= 0 {
+    if bb.hp <= 0 {
         return Some(0);
     }
 
-    let can_cast = status
+    let can_cast = ss
         .iter()
         .enumerate()
         .filter(|(ind, s)| s.zerop())
@@ -101,33 +114,33 @@ fn player_turn(
 
     let result = (0..5)
         .filter_map(|i| {
-            let mut ss = status.clone();
-            let mut pp = p.clone();
-            let mut bb = b.clone();
+            let mut sss = ss.clone();
+            let mut ppp = pp.clone();
+            let mut bbb = bb.clone();
             if can_cast.contains(&i) {
-                match ss.get(i).unwrap() {
-                    Status::Shield(_) if p.mana >= 113 => {
-                        ss.get_mut(i).unwrap().recharge();
-                        pp.mana -= 113;
-                        if let Some(d) = boss_turn(pp, bb, ss, cache) {
+                match sss.get(i).unwrap() {
+                    Status::Shield(_) if ppp.mana >= 113 => {
+                        sss.get_mut(i).unwrap().recharge();
+                        ppp.mana -= 113;
+                        if let Some(d) = boss_turn(ppp, bbb, sss, cache, p2) {
                             Some(d + 113)
                         } else {
                             None
                         }
                     }
-                    Status::Poison(_) if p.mana >= 173 => {
-                        ss.get_mut(i).unwrap().recharge();
-                        pp.mana -= 173;
-                        if let Some(d) = boss_turn(pp, bb, ss, cache) {
+                    Status::Poison(_) if ppp.mana >= 173 => {
+                        sss.get_mut(i).unwrap().recharge();
+                        ppp.mana -= 173;
+                        if let Some(d) = boss_turn(ppp, bbb, sss, cache, p2) {
                             Some(d + 173)
                         } else {
                             None
                         }
                     }
-                    Status::Recharge(_) if p.mana >= 229 => {
-                        ss.get_mut(i).unwrap().recharge();
-                        pp.mana -= 229;
-                        if let Some(d) = boss_turn(pp, bb, ss, cache) {
+                    Status::Recharge(_) if ppp.mana >= 229 => {
+                        sss.get_mut(i).unwrap().recharge();
+                        ppp.mana -= 229;
+                        if let Some(d) = boss_turn(ppp, bbb, sss, cache, p2) {
                             Some(d + 229)
                         } else {
                             None
@@ -140,21 +153,21 @@ fn player_turn(
             } else {
                 match i {
                     // mm
-                    3 => {
-                        pp.mana -= 53;
-                        bb.hp -= 4;
-                        if let Some(d) = boss_turn(pp, bb, ss, cache) {
+                    3 if ppp.mana >= 53 => {
+                        ppp.mana -= 53;
+                        bbb.hp -= 4;
+                        if let Some(d) = boss_turn(ppp, bbb, sss, cache, p2) {
                             Some(d + 53)
                         } else {
                             None
                         }
                     }
                     // drain
-                    4 => {
-                        pp.mana -= 73;
-                        pp.hp += 2;
-                        bb.hp -= 2;
-                        if let Some(d) = boss_turn(pp, bb, ss, cache) {
+                    4 if ppp.mana >= 73 => {
+                        ppp.mana -= 73;
+                        ppp.hp += 2;
+                        bbb.hp -= 2;
+                        if let Some(d) = boss_turn(ppp, bbb, sss, cache, p2) {
                             Some(d + 73)
                         } else {
                             None
@@ -174,43 +187,58 @@ fn boss_turn(
     mut b: Boss,
     mut status: Vec<Status>,
     cache: &mut HashMap<(Player, Boss, Vec<Status>, bool), Option<usize>>,
+    p2: bool,
 ) -> Option<usize> {
     if let Some(d) = cache.get(&(p.clone(), b.clone(), status.clone(), false)) {
         return *d;
     }
 
-    status_settle(&mut p, &mut b, &mut status);
+    let mut ss = status.clone();
+    let mut pp = p.clone();
+    let mut bb = b.clone();
 
-    if b.hp <= 0 {
+    status_settle(&mut pp, &mut bb, &mut ss);
+
+    if bb.hp <= 0 {
         return Some(0);
     }
 
-    let result = if b.damage <= p.armor {
-        p.hp -= 1;
-        player_turn(p.clone(), b.clone(), status.clone(), cache)
+    let result = if bb.damage <= pp.armor {
+        pp.hp -= 1;
+        player_turn(pp, bb, ss, cache, p2)
     } else {
-        p.hp -= b.damage - p.armor;
-        player_turn(p.clone(), b.clone(), status.clone(), cache)
+        pp.hp -= bb.damage - pp.armor;
+        player_turn(pp, bb, ss, cache, p2)
     };
 
     cache.insert((p, b, status.clone(), false), result);
     result
 }
 
-fn handle(p: &mut Player, b: &mut Boss, cache: HashMap<(Player, Boss, Vec<Status>), usize>) {}
-
-fn day22(p: Player, b: Boss) {}
-
 fn main() {
     let p = Player {
-        hp: 1,
-        mana: 167,
+        hp: 50,
+        mana: 500,
         armor: 0,
     };
-    let b = Boss { hp: 9, damage: 8 };
-    let status = vec![Status::Shield(1), Status::Poison(5), Status::Recharge(0)];
-    let mut cache = HashMap::new();
-    player_turn(p, b, status, &mut cache);
+    let b = Boss { hp: 58, damage: 9 };
+    let status = vec![Status::Shield(0), Status::Poison(0), Status::Recharge(0)];
 
-    cache.iter().for_each(|x| println!("{:?}", x));
+    let mut cache = HashMap::new();
+    println!(
+        "1: {:?}",
+        player_turn(p.clone(), b.clone(), status.clone(), &mut cache, false)
+    );
+
+    let mut cache = HashMap::new();
+    println!("2: {:?}", player_turn(p, b, status, &mut cache, true));
+
+    //cache.iter().for_each(|x| println!("{:?}", x));
+    // println!(
+    //     "cache: {:?}",
+    //     cache
+    //         .iter()
+    //         .filter_map(|(k, v)| if k.3 { *v } else { None })
+    //         .min()
+    // );
 }
