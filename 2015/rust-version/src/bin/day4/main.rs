@@ -26,6 +26,6 @@ fn main() {
     //     "{:?}",
     //     format!("{:x}", md5::compute("abcdef609043"))[0..5] == *"00000"
     // );
-    println!("{:?}", day4("ckczppom"));
-    println!("{:?}", day4_part2("ckczppom"));
+    println!("{:?}", day4("ckczppom")); // 117946
+    println!("{:?}", day4_part2("ckczppom")); // 3938038
 }

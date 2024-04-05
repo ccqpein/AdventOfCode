@@ -33,6 +33,6 @@ fn main() {
     //let input = vec!["()())".to_string()];
     let input = read_file_by_line("../inputs/day1.input");
 
-    println!("{:?}", day1(&input));
-    println!("{:?}", day1_part2(&input));
+    println!("{:?}", day1(&input)); // 232
+    println!("{:?}", day1_part2(&input)); // 1783
 }

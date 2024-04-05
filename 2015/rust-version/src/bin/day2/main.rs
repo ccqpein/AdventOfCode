@@ -49,6 +49,6 @@ fn day2_part2(input: &[String]) -> i32 {
 
 fn main() {
     let input = read_file_by_line("../inputs/day2.input");
-    println!("{:?}", day2(&input));
-    println!("{:?}", day2_part2(&input));
+    println!("{:?}", day2(&input)); // 1606483
+    println!("{:?}", day2_part2(&input)); // 3842356
 }

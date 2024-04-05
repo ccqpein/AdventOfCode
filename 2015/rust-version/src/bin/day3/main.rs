@@ -59,6 +59,6 @@ fn day3_part2(input: &[String]) -> usize {
 fn main() {
     let input = read_file_by_line("../inputs/day3.input");
     //let input = ["^v^v^v^v^v".to_string()];
-    println!("{:?}", day3(&input));
-    println!("{:?}", day3_part2(&input));
+    println!("{:?}", day3(&input)); // 2081
+    println!("{:?}", day3_part2(&input)); // 2341
 }
