@@ -88,3 +88,43 @@
                                                                        input
                                                                        (write-to-string n)))))))
           return n))
+
+(defun day5-day9 ()
+  (error "it is mess, I am too lazy."))
+
+(defun day10 (input time)
+  (labels (
+           ;; (helper (input)
+           ;;   (let ((last (nth 0 input))
+           ;;         (len 1)
+           ;;         bucket)
+           ;;     (loop for c in (cdr input)
+           ;;           if (string= c last)
+           ;;             do (incf len)
+           ;;           else
+           ;;             do (setf bucket (append bucket (list `,(write-to-string len) `,(string last)))
+           ;;                      last c
+           ;;                      len 1))
+               
+           ;;     (if (/= len 0)
+           ;;         (setf bucket (append bucket (list `,(write-to-string len) `,(string last)))))
+           ;;     ))
+           (helper2 (input len last bucket)
+             (if (null input)
+                 (append bucket (list `,(write-to-string len) `,(string last)))
+                 (if (string= (nth 0 input) last)
+                     (helper2 (cdr input) (1+ len) last bucket)
+                     (helper2 (cdr input) 1 (nth 0 input) (append bucket (list `,(write-to-string len) `,(string last))))
+                     ))
+             
+             ))
+    
+    (let ((input (concatenate 'list input)))
+      (length (dotimes (a time input)
+                (setf input (helper2 (cdr input) 1 (nth 0 input) '()))
+                ;;(setf input (helper input))
+                )))))
+
+;; (day10 "1113122113" 40)
+;; (day10 "1113122113" 50)
+

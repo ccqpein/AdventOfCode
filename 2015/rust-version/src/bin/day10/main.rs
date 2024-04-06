@@ -39,7 +39,6 @@ fn day10(mut input: String, time: usize) -> String {
 
 fn main() {
     println!("1: {:?}", day10("1".to_string(), 5));
-    println!("1: {:?}", day10("1113122113".to_string(), 40).len());
-
-    println!("2: {:?}", day10("1113122113".to_string(), 50).len());
+    println!("1: {:?}", day10("1113122113".to_string(), 40).len()); // 360154
+    println!("2: {:?}", day10("1113122113".to_string(), 50).len()); // 5103798
 }
