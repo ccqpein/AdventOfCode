@@ -128,3 +128,55 @@
 ;; (day10 "1113122113" 40)
 ;; (day10 "1113122113" 50)
 
+(defun day11-day15 ()
+  (error "it is mess, I am too lazy."))
+
+(defun day16 (&optional part2)
+  (let ((checklist-table
+          (loop
+            with table = (make-hash-table :test 'equal)
+            for l in '("children: 3"
+                       "cats: 7"
+                       "samoyeds: 2"
+                       "pomeranians: 3"
+                       "akitas: 0"
+                       "vizslas: 0"
+                       "goldfish: 5"
+                       "trees: 3"
+                       "cars: 2"
+                       "perfumes: 1")
+            do (str:match l
+                 ((item ": " num) (setf (gethash item table) (parse-integer num))))
+            finally (return table))))
+    
+    (labels ((p1 (table sue item0 num0 item1 num1 item2 num2)
+               (if (and (= (gethash item0 table) (parse-integer num0))
+                        (= (gethash item1 table) (parse-integer num1))
+                        (= (gethash item2 table) (parse-integer num2)))
+                   (parse-integer sue))
+               )
+             (p2 (table sue item0 num0 item1 num1 item2 num2)
+               (loop for (item num) on (list item0 num0 item1 num1 item2 num2) by #'cddr
+                     do (str:match item
+                          (("cats") (if (>= (gethash item table) (parse-integer num))
+                                        (return-from p2 nil)))
+                          (("trees") (if (>= (gethash item table) (parse-integer num))
+                                         (return-from p2 nil)))
+                          (("pomeranians") (if (<= (gethash item table) (parse-integer num))
+                                               (return-from p2 nil)))
+                          (("goldfish") (if (<= (gethash item table) (parse-integer num))
+                                            (return-from p2 nil)))
+                          (t (if (/= (gethash item table) (parse-integer num))
+                                 (return-from p2 nil))))
+                     finally (return (parse-integer sue)))
+               ))
+      
+      (let ((input (read-file-by-line "../inputs/day16.input")))
+        (loop for l in input
+              do (str:match l
+                   (("Sue " sue ": " item0 ": " num0 ", " item1 ": " num1 ", " item2 ": " num2)
+                    (let ((x (funcall
+                              (if part2 #'p2 #'p1)
+                              checklist-table sue item0 num0 item1 num1 item2 num2)))
+                      (if x (return-from day16 x))))))
+        ))))

@@ -76,6 +76,6 @@ perfumes: 1"#
 
 fn main() {
     let input = read_file_by_line("../inputs/day16.input");
-    println!("1: {:?}", day16(&input, true));
-    println!("2: {:?}", day16(&input, false));
+    println!("1: {:?}", day16(&input, true)); // 213
+    println!("2: {:?}", day16(&input, false)); // 323
 }
