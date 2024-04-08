@@ -93,32 +93,13 @@
   (error "it is mess, I am too lazy."))
 
 (defun day10 (input time)
-  (labels (
-           ;; (helper (input)
-           ;;   (let ((last (nth 0 input))
-           ;;         (len 1)
-           ;;         bucket)
-           ;;     (loop for c in (cdr input)
-           ;;           if (string= c last)
-           ;;             do (incf len)
-           ;;           else
-           ;;             do (setf bucket (append bucket (list `,(write-to-string len) `,(string last)))
-           ;;                      last c
-           ;;                      len 1))
-               
-           ;;     (if (/= len 0)
-           ;;         (setf bucket (append bucket (list `,(write-to-string len) `,(string last)))))
-           ;;     ))
-           (helper2 (input len last bucket)
+  (labels ((helper2 (input len last bucket)
              (if (null input)
                  (append bucket (list `,(write-to-string len) `,(string last)))
                  (if (string= (nth 0 input) last)
                      (helper2 (cdr input) (1+ len) last bucket)
                      (helper2 (cdr input) 1 (nth 0 input) (append bucket (list `,(write-to-string len) `,(string last))))
-                     ))
-             
-             ))
-    
+                     ))))    
     (let ((input (concatenate 'list input)))
       (length (dotimes (a time input)
                 (setf input (helper2 (cdr input) 1 (nth 0 input) '()))
@@ -132,29 +113,25 @@
   (error "it is mess, I am too lazy."))
 
 (defun day16 (&optional part2)
-  (let ((checklist-table
-          (loop
-            with table = (make-hash-table :test 'equal)
-            for l in '("children: 3"
-                       "cats: 7"
-                       "samoyeds: 2"
-                       "pomeranians: 3"
-                       "akitas: 0"
-                       "vizslas: 0"
-                       "goldfish: 5"
-                       "trees: 3"
-                       "cars: 2"
-                       "perfumes: 1")
-            do (str:match l
-                 ((item ": " num) (setf (gethash item table) (parse-integer num))))
-            finally (return table))))
-    
+  (let ((checklist-table (loop with table = (make-hash-table :test 'equal)
+                               for l in '("children: 3"
+                                          "cats: 7"
+                                          "samoyeds: 2"
+                                          "pomeranians: 3"
+                                          "akitas: 0"
+                                          "vizslas: 0"
+                                          "goldfish: 5"
+                                          "trees: 3"
+                                          "cars: 2"
+                                          "perfumes: 1")
+                               do (str:match l
+                                    ((item ": " num) (setf (gethash item table) (parse-integer num))))
+                               finally (return table))))
     (labels ((p1 (table sue item0 num0 item1 num1 item2 num2)
                (if (and (= (gethash item0 table) (parse-integer num0))
                         (= (gethash item1 table) (parse-integer num1))
                         (= (gethash item2 table) (parse-integer num2)))
-                   (parse-integer sue))
-               )
+                   (parse-integer sue)))
              (p2 (table sue item0 num0 item1 num1 item2 num2)
                (loop for (item num) on (list item0 num0 item1 num1 item2 num2) by #'cddr
                      do (str:match item
@@ -168,15 +145,40 @@
                                             (return-from p2 nil)))
                           (t (if (/= (gethash item table) (parse-integer num))
                                  (return-from p2 nil))))
-                     finally (return (parse-integer sue)))
-               ))
-      
+                     finally (return (parse-integer sue)))))
       (let ((input (read-file-by-line "../inputs/day16.input")))
         (loop for l in input
               do (str:match l
                    (("Sue " sue ": " item0 ": " num0 ", " item1 ": " num1 ", " item2 ": " num2)
-                    (let ((x (funcall
-                              (if part2 #'p2 #'p1)
-                              checklist-table sue item0 num0 item1 num1 item2 num2)))
-                      (if x (return-from day16 x))))))
-        ))))
+                    (let ((x (funcall (if part2 #'p2 #'p1)
+                                      checklist-table sue item0 num0 item1 num1 item2 num2)))
+                      (if x (return-from day16 x))))))))))
+
+(defun day17 (&optional part2)
+  (labels ((p1 (l target)
+             (if (= 0 target)
+                 1
+                 (loop for ind from 0 below (length l)
+                       for x = (nth ind l)
+                       if (<= x target)
+                         sum (p1 (subseq l (1+ ind)) (- target x)) into all
+                       finally (return all))))
+           (p2 (l target deep set)
+             (if (= 0 target)
+                 (progn (if (not (gethash deep set))
+                            (setf (gethash deep set) 1)
+                            (incf (gethash deep set)))
+                        1)
+                 (loop for ind from 0 below (length l)
+                       for x = (nth ind l)
+                       if (<= x target)
+                         sum (p2 (subseq l (1+ ind)) (- target x) (1+ deep) set) into all
+                       finally (return all))
+                 )))
+    (let ((input (sort (loop for l in (read-file-by-line "../inputs/day17.input") collect (parse-integer l))
+                       #'>)))
+      (if (not part2)
+          (p1 input 150)
+          (let ((set (make-hash-table :test 'equal)))
+            (p2 input 150 1 set)
+            (gethash (car (sort (alexandria:hash-table-keys set) #'<)) set))))))

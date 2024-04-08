@@ -66,6 +66,6 @@ fn main() {
         .collect::<Vec<_>>();
 
     //let input = vec![20, 15, 10, 5, 5];
-    println!("1: {:?}", day17(&input, 150, false));
-    println!("2: {:?}", day17(&input, 150, true))
+    println!("1: {:?}", day17(&input, 150, false)); // 654
+    println!("2: {:?}", day17(&input, 150, true)) // 57
 }
