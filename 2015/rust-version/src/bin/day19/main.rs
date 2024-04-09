@@ -181,7 +181,7 @@ fn main() {
     let input = read_file_by_line("../inputs/day19.input");
 
     //handle1("H", "HOH", &vec!["HO", "OH"], &mut HashSet::new());
-    //println!("1: {:?}", day19(&input));
+    println!("1: {:?}", day19(&input)); // 576
 
     // dbg!(handle2(
     //     "HOHOHO",
@@ -208,5 +208,5 @@ fn main() {
     //     .collect::<HashMap<_, _>>(),
     // ));
     //println!("2: {:?}", day19_22(&input));
-    println!("2: {:?}", day19_23(&input));
+    println!("2: {:?}", day19_23(&input)); // 207
 }

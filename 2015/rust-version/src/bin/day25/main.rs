@@ -49,5 +49,5 @@ fn main() {
     //test_input();
     assert_eq!(18, cal_step(4, 3));
     assert_eq!(20, cal_step(2, 5));
-    println!("1: {}", day25(3010, 3019));
+    println!("1: {}", day25(3010, 3019)); // 8997277
 }

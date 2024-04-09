@@ -114,6 +114,6 @@ fn main() {
     input.sort_by(|a, b| b.partial_cmp(a).unwrap()); // larger first
 
     //dbg!(get_group(0, 3, 20, &input));
-    println!("1: {}", day24(&input, false));
-    println!("2: {}", day24(&input, true));
+    println!("1: {}", day24(&input, false)); // 11266889531
+    println!("2: {}", day24(&input, true)); // 77387711
 }
