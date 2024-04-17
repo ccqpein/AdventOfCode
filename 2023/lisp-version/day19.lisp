@@ -10,6 +10,7 @@
          (ins-table (make-hash-table :test 'equal)))
     (loop for line in first
           for ins = (parse-ins line)
+          do (format t "line: ~a~% ins: ~a~%" line ins)
           do (setf (gethash (car ins) ins-table) (cdr ins)))
     (values ins-table (mapcar #'parse-data second))))
 
@@ -118,3 +119,39 @@
 
 ;;(= 368964 (day19 *input*))
 ;;(= 127675188176682 (day19-2 *input*))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; try to use macro
+;;; https://www.reddit.com/r/Common_Lisp/comments/1c5uq3k/advanced_users_advent_of_code_2023_days_1920
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun clean-one-line-input (line)
+  (let* ((whole (cl-ppcre:split "[{}]" line))
+         (name (car whole))
+         (second-part (cadr whole)))
+    (list
+     (read-from-string name)
+     (loop for x in (str:split "," second-part)
+           collect (str:match x
+                     ((v "<" num ":" next)
+                      `(< ,(read-from-string v) ,(read-from-string num) #',(read-from-string next)))
+                     ((v ">" num ":" next)
+                      `(> ,(read-from-string v) ,(read-from-string num) #',(read-from-string next)))
+                     ((v)
+                      `(#',(read-from-string v))))))))
+
+;; (clean-one-line-input "px{a<2006:qkq,m>2090:A,rfg}")
+;; => (PX ((< A 2006 #'QKQ) (< M 2090 #'A) (#'RFG)))
+
+(defmacro gen-fun2 (cleaned-one-line)
+  `(defun ,(car cleaned-one-line) (x m a s)
+     ,@(loop for ins in (cadr cleaned-one-line)
+             collect (if (> (length ins) 1)
+                         `(if ,(subseq ins 0 3) (return-from ,(car cleaned-one-line) (apply ,(car (last ins)) x m a s)))
+                         `(apply ,(car (last ins)) x m a s)
+                         ))))
+
+(pprint (macroexpand-1 `(gen-fun2 ,(clean-one-line-input "px{a<2006:qkq,m>2090:A,rfg}"))))
+(pprint (macroexpand-1 `(gen-fun2 ,(clean-one-line-input "pv{a>1716:R,A}"))))
+(pprint (macroexpand-1 `(gen-fun2 ,(clean-one-line-input "rfg{s<537:gd,x>2440:R,A}"))))
+(pprint (macroexpand-1 `(gen-fun2 ,(clean-one-line-input "lnx{m>1548:A,A}"))))
