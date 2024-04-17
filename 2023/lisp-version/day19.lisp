@@ -147,8 +147,8 @@
   `(defun ,(car cleaned-one-line) (x m a s)
      ,@(loop for ins in (cadr cleaned-one-line)
              collect (if (> (length ins) 1)
-                         `(if ,(subseq ins 0 3) (return-from ,(car cleaned-one-line) (apply ,(car (last ins)) x m a s)))
-                         `(apply ,(car (last ins)) x m a s)
+                         `(if ,(subseq ins 0 3) (return-from ,(car cleaned-one-line) (funcall ,(car (last ins)) x m a s)))
+                         `(funcall ,(car (last ins)) x m a s)
                          ))))
 
 (pprint (macroexpand-1 `(gen-fun2 ,(clean-one-line-input "px{a<2006:qkq,m>2090:A,rfg}"))))
