@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 tools = { path = "../../tools" }
 regex = "1"
+rayon = "1.10.0"
