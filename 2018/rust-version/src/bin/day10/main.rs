@@ -23,7 +23,7 @@ fn day10(input: &[String]) {
         })
         .collect::<Vec<(i32, i32, i32, i32)>>();
 
-    let mut t = 1;
+    let mut t = 0;
     loop {
         //println!("{}:", t);
         let ss = bucket
@@ -68,9 +68,18 @@ fn view(bucket: &HashSet<(i32, i32)>) {
 
 fn all_around(bucket: &HashSet<(i32, i32)>) -> bool {
     for (x, y) in bucket {
-        if [(1, 0), (0, 1), (-1, 0), (0, -1)]
-            .into_iter()
-            .all(|(dx, dy)| !bucket.contains(&(x + dx, y + dy)))
+        if [
+            (1, 0),
+            (0, 1),
+            (-1, 0),
+            (0, -1),
+            (-1, -1),
+            (-1, 1),
+            (1, 1),
+            (1, -1),
+        ]
+        .into_iter()
+        .all(|(dx, dy)| !bucket.contains(&(x + dx, y + dy)))
         {
             return false;
         }
