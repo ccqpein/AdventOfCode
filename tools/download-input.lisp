@@ -35,9 +35,8 @@ Need the session in cookie for authorizing."
 	
 	(if input-file-path
 		(with-open-file (s input-file-path :direction :output :if-does-not-exist :create :if-exists :overwrite)
-		  (format s content)))
-	
-	content))
+		  (format s content))
+	    (format t content))))
 
 (defun cli/options ()
   (list
@@ -78,6 +77,10 @@ Need the session in cookie for authorizing."
   (let ((y (clingon:getopt cmd :year *this-year*))
         (d (clingon:getopt cmd :day))
         (o (clingon:getopt cmd :output)))
+
+    (if (null d)
+        (error "ERROR: has to have day number"))
+    
     (download-input y d :input-file-path o)))
 
 (defun cli/command ()
