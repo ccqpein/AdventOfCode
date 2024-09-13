@@ -5,9 +5,9 @@
 (in-package :ciel-user)
 
 (defparameter *this-folder*
-  (uiop:pathname-parent-directory-pathname (first *script-args*)))
+  (uiop:pathname-directory-pathname (first *script-args*)))
 
-(defvar *aoc-session*  (-> (file-finder:finder* :root (file-finder:file "../tools/")
+(defvar *aoc-session*  (-> (file-finder:finder* :root (file-finder:file *this-folder*)
                                                 :predicates (file-finder:name= "aoc-session"))
                            (first)
                            (file-finder:path)
