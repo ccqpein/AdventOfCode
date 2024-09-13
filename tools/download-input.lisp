@@ -7,13 +7,14 @@
 (defparameter *this-folder*
   (uiop:pathname-directory-pathname (first *script-args*)))
 
-(defvar *aoc-session*  (-> (file-finder:finder* :root (file-finder:file *this-folder*)
-                                                :predicates (file-finder:name= "aoc-session"))
-                           (first)
-                           (file-finder:path)
-                           (str:from-file)
-                           (str:lines)
-                           (car)))
+(defvar *aoc-session*  (if *this-folder*
+                           (-> (file-finder:finder* :root (file-finder:file *this-folder*)
+                                                    :predicates (file-finder:name= "aoc-session"))
+                               (first)
+                               (file-finder:path)
+                               (str:from-file)
+                               (str:lines)
+                               (car))))
 
 (defvar *this-year* (nth 5 (multiple-value-list (get-decoded-time))) "this year")
 
