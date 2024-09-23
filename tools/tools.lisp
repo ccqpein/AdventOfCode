@@ -24,6 +24,12 @@
   (dolist (ele eles)
     (setf (gethash ele (set-inner set)) t)))
 
+(defun set-delete (set &rest eles)
+  "delete the elements from set"
+  (declare (hash-set set))
+  (loop for ele in eles
+        do (remhash ele (set-inner set))))
+
 (defun set-get (set ele)
   "Get element from hash set, return nil if there is nothing.
 And don't change the set inside"
