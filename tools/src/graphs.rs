@@ -1,5 +1,4 @@
 use rand::seq::IteratorRandom;
-use std::clone;
 use std::collections::HashSet;
 use std::collections::{BinaryHeap, HashMap};
 use std::error::Error;
@@ -269,7 +268,7 @@ impl Dijkstra {
         Dijkstra {}
     }
 
-    pub fn run<ID, V>(&mut self, g: &Graph<ID, V>, start: ID, end: ID) -> V
+    pub fn run<ID, V>(&mut self, g: &Graph<ID, V>, start: ID, end: ID) -> Option<V>
     where
         ID: Hash + Clone + Eq + Copy,
         V: Ord + Default + Add<Output = V> + Copy,
@@ -283,7 +282,7 @@ impl Dijkstra {
         let mut this = start;
         loop {
             if let Some(v) = record.get(&end) {
-                return *v;
+                return Some(*v);
             }
 
             let this_v = record.get(&this).unwrap().to_owned();
@@ -316,7 +315,7 @@ impl Dijkstra {
                             break *n.id();
                         }
                     }
-                    None => return *record.get(&end).unwrap(),
+                    None => return record.get(&end).cloned(),
                 }
             }
         }
