@@ -1,4 +1,5 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use std::hash::Hash;
 
 use tools::*;
 
@@ -49,6 +50,38 @@ fn part1(from: (i32, i32), target: (i32, i32), fav: i32) -> i32 {
     d.run(&g, from, target).unwrap()
 }
 
+fn walk<ID>(
+    g: &Graph<ID, i32>,
+    this: ID,
+    max_step: i32,
+    step_count: i32,
+    cache: &mut HashMap<ID, i32>,
+) where
+    ID: Hash + Eq + Clone,
+{
+    if step_count == max_step {
+        return;
+    }
+
+    for next in g.get(&this).unwrap() {
+        if cache.contains_key(next.id()) && *cache.get(next.id()).unwrap() <= step_count {
+            continue;
+        }
+        cache.insert(next.id().clone(), step_count + 1);
+        walk::<_>(g, next.id().clone(), max_step, step_count + 1, cache)
+    }
+}
+
+fn part2(start: (i32, i32), max_step: i32, fav: i32) -> usize {
+    let g = generate_graph(50, 50, fav);
+    let mut cache = HashMap::new();
+
+    cache.insert(start, 0);
+    walk(&g, start, max_step, 0, &mut cache);
+    //dbg!(&cache);
+    cache.len()
+}
+
 fn main() {
     //dbg!(if_open::<10>(0, 0));
     //dbg!(if_open(1, 0, 10));
@@ -56,6 +89,10 @@ fn main() {
     //dbg!(if_open::<10>(7, 0));
     //dbg!(if_open(5, 4, 10));
 
-    dbg!(part1((1, 1), (7, 4), 10));
+    //dbg!(part1((1, 1), (7, 4), 10));
+
     dbg!(part1((1, 1), (31, 39), 1352));
+
+    //dbg!(part2((1, 1), 11, 10));
+    dbg!(part2((1, 1), 50, 1352));
 }
