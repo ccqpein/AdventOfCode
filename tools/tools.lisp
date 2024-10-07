@@ -377,6 +377,26 @@ in map"
   (loop for r from 0 below (get-aoc-map-rows-len map)
         do (set-aoc-map-ele map (list r col-num) (nth r new-col))))
 
+;;;;;;;;;;;;;;;;;
+;; AOC graph below
+;;;;;;;;;;;;;;;;;
+
+;;:= todo 
+(defstruct (aoc-graph (:conc-name agraph-))
+  "the graph"
+  graph-type ;; or 'directed
+  sort-fun ;; the function use to generate binary-heap
+  table ;; id -> cl-help:binary-heap
+  )
+
+(defun make-graph (&key (graph-type 'undirected) (sort-fun #'<))
+  (let ((table (make-hash-table :test 'equal)))
+    (make-aoc-graph :graph-type graph-type
+                    :sort-fun sort-fun
+                    :table table)))
+
+(defun insert-graph-node (id other-id weight))
+
 ;;;;;;;;;;;;;;;
 ;; some macros
 ;;;;;;;;;;;;;;;
