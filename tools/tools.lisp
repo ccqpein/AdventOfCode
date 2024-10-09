@@ -384,18 +384,50 @@ in map"
 ;;:= todo 
 (defstruct (aoc-graph (:conc-name agraph-))
   "the graph"
-  graph-type ;; or 'directed
+  graph-type ;; 'directed or 'undirected
   sort-fun ;; the function use to generate binary-heap
+  heap-key-fun ;; the key function to generate binary-heap
   table ;; id -> cl-help:binary-heap
   )
 
-(defun make-graph (&key (graph-type 'undirected) (sort-fun #'<))
+(defun make-graph (&key (graph-type 'directed) (sort-fun #'<) (key #'second))
   (let ((table (make-hash-table :test 'equal)))
     (make-aoc-graph :graph-type graph-type
                     :sort-fun sort-fun
+                    :heap-key-fun key
                     :table table)))
 
-(defun insert-graph-node (id other-id weight))
+(defun insert-graph-edge (graph id other-id weight)
+  (cond ((eq 'directed (agraph-graph-type graph))
+         (progn
+           (unless (gethash id (agraph-table graph))
+             (setf (gethash id (agraph-table graph))
+                   (make-instance 'cl-heap:binary-heap
+                                  :sort-fun (agraph-sort-fun graph)
+                                  :key (agraph-heap-key-fun graph))))
+           (cl-heap:add-to-heap (gethash id (agraph-table graph))
+                                (list other-id weight))))
+        ((eq 'undirected (agraph-graph-type graph))
+         (progn
+           (unless (gethash id (agraph-table graph))
+             (setf (gethash id (agraph-table graph))
+                   (make-instance 'cl-heap:binary-heap
+                                  :sort-fun (agraph-sort-fun graph)
+                                  :key (agraph-heap-key-fun graph))))
+           (unless (gethash other-id (agraph-table graph))
+             (setf (gethash other-id (agraph-table graph))
+                   (make-instance 'cl-heap:binary-heap
+                                  :sort-fun (agraph-sort-fun graph)
+                                  :key (agraph-heap-key-fun graph))))
+           (cl-heap:add-to-heap (gethash other-id (agraph-table graph))
+                                (list id weight))))
+        ))
+
+(let ((g (make-graph)))
+  (insert-graph-edge g 'a 'b 12)
+  (insert-graph-edge g 'a 'c 11)
+  (insert-graph-edge g 'a 'd 11)
+  g)
 
 ;;;;;;;;;;;;;;;
 ;; some macros
