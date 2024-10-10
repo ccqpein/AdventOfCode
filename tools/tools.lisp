@@ -384,50 +384,99 @@ in map"
 ;;:= todo 
 (defstruct (aoc-graph (:conc-name agraph-))
   "the graph"
-  graph-type ;; 'directed or 'undirected
-  sort-fun ;; the function use to generate binary-heap
-  heap-key-fun ;; the key function to generate binary-heap
-  table ;; id -> cl-help:binary-heap
-  )
+  ;; 'directed or 'undirected
+  graph-type 
 
-(defun make-graph (&key (graph-type 'directed) (sort-fun #'<) (key #'second))
+  ;; id -> cl-help:binary-heap
+  table)
+
+(defun make-graph (&key (graph-type 'directed))
   (let ((table (make-hash-table :test 'equal)))
     (make-aoc-graph :graph-type graph-type
-                    :sort-fun sort-fun
-                    :heap-key-fun key
                     :table table)))
 
-(defun insert-graph-edge (graph id other-id weight)
+(defun insert-graph-node (graph id other-id weight)
+  "id --weight-> other-id. other-id isn't ensure unique"
   (cond ((eq 'directed (agraph-graph-type graph))
          (progn
            (unless (gethash id (agraph-table graph))
              (setf (gethash id (agraph-table graph))
-                   (make-instance 'cl-heap:binary-heap
-                                  :sort-fun (agraph-sort-fun graph)
-                                  :key (agraph-heap-key-fun graph))))
-           (cl-heap:add-to-heap (gethash id (agraph-table graph))
-                                (list other-id weight))))
+                   '()))
+           (push (list other-id weight) (gethash id (agraph-table graph)))))
         ((eq 'undirected (agraph-graph-type graph))
          (progn
            (unless (gethash id (agraph-table graph))
              (setf (gethash id (agraph-table graph))
-                   (make-instance 'cl-heap:binary-heap
-                                  :sort-fun (agraph-sort-fun graph)
-                                  :key (agraph-heap-key-fun graph))))
+                   '()))
            (unless (gethash other-id (agraph-table graph))
              (setf (gethash other-id (agraph-table graph))
-                   (make-instance 'cl-heap:binary-heap
-                                  :sort-fun (agraph-sort-fun graph)
-                                  :key (agraph-heap-key-fun graph))))
-           (cl-heap:add-to-heap (gethash other-id (agraph-table graph))
-                                (list id weight))))
+                   '()))
+           (push (list other-id weight) (gethash id (agraph-table graph)))
+           (push (list id weight) (gethash other-id (agraph-table graph)))))
         ))
 
-(let ((g (make-graph)))
-  (insert-graph-edge g 'a 'b 12)
-  (insert-graph-edge g 'a 'c 11)
-  (insert-graph-edge g 'a 'd 11)
-  g)
+(defun get-all-nodes-of-id (graph id)
+  "get all nodes of id in array. unsorted"
+  (gethash id (agraph-table graph)))
+
+(defun dijkstra (graph start-id end-id &key (sort-fun #'<))
+  "graph has to be id -> (id value). The id must be can get with #'first"
+  (let (;; other id to start-id distance 
+        (distance-table (make-hash-table :test 'equal))
+        (set (make-hash-set)))
+
+    ;; start to self is 0
+    (setf (gethash start-id distance-table) 0)
+    
+    (do* ((this start-id)
+          
+          (next-round (make-instance 'cl-heap:binary-heap
+                                     :sort-fun sort-fun
+                                     :key #'second))
+          
+          (this-connected-nodes (get-all-nodes-of-id graph this)
+                                (get-all-nodes-of-id graph this))
+          
+          (this-to-start-value (gethash this distance-table)
+                               (gethash this distance-table)))
+         
+         ((equal this end-id)
+          this-to-start-value)
+      
+      ;;(format t "this is ~a, heap is ~a~%" this (slot-value next-round 'cl-heap::data))
+      (if (set-get set this)
+          (progn ;;(format t "this ~a has already visited, pass~%" this)
+                 nil)
+          (loop for (id v) in this-connected-nodes
+                unless (set-get set id)
+                  if (or (not (gethash id distance-table))
+                         (> (gethash id distance-table) (+ this-to-start-value v)))
+                    do (setf (gethash id distance-table)
+                             (+ this-to-start-value v))
+                    and do (cl-heap:add-to-heap next-round
+                                                (list id (+ this-to-start-value v)))))
+      
+      ;;(format t "new heap is ~a~%" (slot-value next-round 'cl-heap::data))
+      ;; visited
+      (set-insert set this)
+      
+      ;; update the id
+      (setf this (first (cl-heap:pop-heap next-round)))
+      )))
+
+;; example from wiki
+;; (let ((g (make-graph :graph-type 'undirected)))
+;;   (insert-graph-node g 1 2 7)
+;;   (insert-graph-node g 1 6 14)
+;;   (insert-graph-node g 1 3 9)
+;;   (insert-graph-node g 2 3 10)
+;;   (insert-graph-node g 2 4 15)
+;;   (insert-graph-node g 3 6 2)
+;;   (insert-graph-node g 3 4 11)
+;;   (insert-graph-node g 6 5 9)
+;;   (insert-graph-node g 4 5 6)
+;;   (dijkstra g 1 5))
+
 
 ;;;;;;;;;;;;;;;
 ;; some macros

@@ -1,7 +1,5 @@
 use std::fmt::Debug;
 
-//:= rename to CarryableUnit?
-
 pub trait Unit {
     type UnitResult: PosResult;
     fn next(&self) -> Self::UnitResult;
