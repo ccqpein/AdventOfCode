@@ -381,7 +381,6 @@ in map"
 ;; AOC graph below
 ;;;;;;;;;;;;;;;;;
 
-;;:= todo 
 (defstruct (aoc-graph (:conc-name agraph-))
   "the graph"
   ;; 'directed or 'undirected
