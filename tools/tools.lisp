@@ -400,23 +400,27 @@ in map"
          (progn
            (unless (gethash id (agraph-table graph))
              (setf (gethash id (agraph-table graph))
-                   '()))
-           (push (list other-id weight) (gethash id (agraph-table graph)))))
+                   (make-hash-table :test 'equal)))
+           (setf (gethash other-id (gethash id (agraph-table graph))) weight)))
         ((eq 'undirected (agraph-graph-type graph))
          (progn
            (unless (gethash id (agraph-table graph))
              (setf (gethash id (agraph-table graph))
-                   '()))
+                   (make-hash-table :test 'equal)))
            (unless (gethash other-id (agraph-table graph))
              (setf (gethash other-id (agraph-table graph))
-                   '()))
-           (push (list other-id weight) (gethash id (agraph-table graph)))
-           (push (list id weight) (gethash other-id (agraph-table graph)))))
+                   (make-hash-table :test 'equal)))
+           (setf (gethash other-id (gethash id (agraph-table graph))) weight)
+           (setf (gethash id (gethash other-id (agraph-table graph))) weight)))
         ))
 
 (defun get-all-nodes-of-id (graph id)
   "get all nodes of id in array. unsorted"
-  (gethash id (agraph-table graph)))
+  (alexandria:hash-table-alist (gethash id (agraph-table graph))))
+
+(defun get-all-nodes (graph)
+  (mapcar (lambda (id) (cons id (get-all-nodes-of-id graph id)))
+          (alexandria:hash-table-keys (agraph-table graph))))
 
 (defun dijkstra (graph start-id end-id &key (sort-fun #'<))
   "graph has to be id -> (id value). The id must be can get with #'first"
@@ -439,14 +443,14 @@ in map"
           (this-to-start-value (gethash this distance-table)
                                (gethash this distance-table)))
          
-         ((equal this end-id)
+         ((or (equal this end-id) (not this))
           this-to-start-value)
       
       ;;(format t "this is ~a, heap is ~a~%" this (slot-value next-round 'cl-heap::data))
       (if (set-get set this)
           (progn ;;(format t "this ~a has already visited, pass~%" this)
-                 nil)
-          (loop for (id v) in this-connected-nodes
+            nil)
+          (loop for (id . v) in this-connected-nodes
                 unless (set-get set id)
                   if (or (not (gethash id distance-table))
                          (> (gethash id distance-table) (+ this-to-start-value v)))
@@ -474,6 +478,7 @@ in map"
 ;;   (insert-graph-node g 3 4 11)
 ;;   (insert-graph-node g 6 5 9)
 ;;   (insert-graph-node g 4 5 6)
+;;   ;;(get-all-nodes-of-id g 1)
 ;;   (dijkstra g 1 5))
 
 
