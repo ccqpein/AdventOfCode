@@ -386,7 +386,7 @@ in map"
   ;; 'directed or 'undirected
   graph-type 
 
-  ;; id -> cl-help:binary-heap
+  ;; id -> (list (list other-id weight) *)
   table)
 
 (defun make-graph (&key (graph-type 'directed))
