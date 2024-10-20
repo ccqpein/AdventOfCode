@@ -1,29 +1,5 @@
-use itertools::Itertools;
 use regex::Regex;
 use tools::*;
-
-// copy from internet
-fn gcd(mut a: usize, mut b: usize) -> usize {
-    if a == b {
-        return a;
-    }
-    if b > a {
-        let temp = a;
-        a = b;
-        b = temp;
-    }
-    while b > 0 {
-        let temp = a;
-        a = b;
-        b = temp % b;
-    }
-    return a;
-}
-
-fn lcm(a: usize, b: usize) -> usize {
-    return a * (b / gcd(a, b));
-}
-///////////
 
 #[derive(Debug)]
 struct Input {
@@ -49,12 +25,8 @@ fn parse_input(s: &[String]) -> Vec<Input> {
         .collect()
 }
 
+// part1 and part2
 fn part1(inputs: &[Input]) -> usize {
-    // let lcm = inputs
-    //     .iter()
-    //     .map(|i| i.positions)
-    //     .fold(1, |acc, x| lcm(acc, x));
-    // dbg!(&lcm);
     for t in 0.. {
         if inputs
             .iter()
@@ -71,7 +43,16 @@ fn main() {
     // dbg!(parse_input(
     //     vec!["Disc #1 has 13 positions; at time=0, it is at position 1.".to_string()].as_slice()
     // ));
+
     let input = read_file_by_line("../inputs/day15.input");
     //let input = read_file_by_line("../inputs/day15_demo.input");
-    println!("part1: {}", part1(&parse_input(&input)))
+    let mut parsed_input = parse_input(&input);
+    println!("part1: {}", part1(&parsed_input));
+
+    parsed_input.push(Input {
+        num: parsed_input.last().unwrap().num + 1,
+        positions: 11,
+        at_position: 0,
+    });
+    println!("part2: {}", part1(&parsed_input));
 }
