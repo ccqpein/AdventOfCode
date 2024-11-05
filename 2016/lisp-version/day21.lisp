@@ -67,4 +67,22 @@
         do (setf init (apply (car comm) (append (cdr comm) (list init))))
         finally (return (apply #'str:concat init))))
 
+(defun parse-line-rev (line)
+  (str:match line
+    (("swap position " x " with position " y)
+     (list #'swap-position (parse-integer y) (parse-integer x)))
+    (("swap letter " x " with letter " y)
+     (list #'swap-letter y x))
+    (("rotate based on position of letter " x)
+     (list #'rotate-base-on x)) ;; need new reverse function
+    (("rotate " dir " " x " step" _)
+     (list #'rotate (if (string= "left" dir) "right" "left") (parse-integer x)))
+    (("reverse positions " x " through " y)
+     (list #'reverse-position (parse-integer y) (parse-integer x)))
+    (("move position " x " to position " y)
+     (list #'move-position (parse-integer y) (parse-integer z)))))
+
+(defun day21-2 (&optional (input *input*))
+  )
+
 ;; (day21 "abcdefgh")
