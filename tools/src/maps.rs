@@ -1,5 +1,6 @@
 use std::fmt::{Debug, Display};
 
+#[derive(Debug)]
 pub struct Map<T> {
     /// total length of row and col
     r_len: usize,
@@ -9,11 +10,11 @@ pub struct Map<T> {
 }
 
 impl<T: Clone> Map<T> {
-    fn new() -> Self {
+    pub fn new(r: usize, c: usize, init_v: T) -> Self {
         Self {
-            r_len: 0,
-            c_len: 0,
-            inner: Vec::new(),
+            r_len: r,
+            c_len: c,
+            inner: vec![vec![init_v; c]; r],
         }
     }
 
@@ -43,6 +44,16 @@ impl<T: Clone> Map<T> {
 
     pub fn get_mut(&mut self, r: usize, c: usize) -> Option<&mut T> {
         self.inner.get_mut(r)?.get_mut(c)
+    }
+
+    pub fn set(&mut self, r: usize, c: usize, v: T) -> Result<(), String> {
+        *self
+            .inner
+            .get_mut(r)
+            .ok_or("not found".to_string())?
+            .get_mut(c)
+            .ok_or("not found".to_string())? = v;
+        Ok(())
     }
 
     pub fn iter_mut(&mut self) -> MapIterMut<'_, T> {
