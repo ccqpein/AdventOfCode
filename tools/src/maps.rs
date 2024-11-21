@@ -1,7 +1,4 @@
-use std::{
-    cell::RefCell,
-    fmt::{Debug, Display},
-};
+use std::fmt::{Debug, Display};
 
 #[derive(Debug)]
 pub struct Map<T> {
@@ -266,7 +263,7 @@ where
     r_offset: usize,
     c_offset: usize,
 
-    map: RefCell<&'a mut Map<T>>,
+    map: &'a mut Map<T>,
 }
 
 impl<'a, T> MapIterMut<'a, T> {
@@ -274,7 +271,7 @@ impl<'a, T> MapIterMut<'a, T> {
         Self {
             r_offset: 0,
             c_offset: 0,
-            map: RefCell::new(m),
+            map: m,
         }
     }
 }
@@ -283,18 +280,19 @@ impl<'a, T: Clone + Debug> Iterator for MapIterMut<'a, T> {
     type Item = ((usize, usize), &'a mut T);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.c_offset == self.map.borrow().c_len {
+        if self.c_offset == self.map.c_len {
             self.c_offset = 0;
             self.r_offset += 1;
         }
 
-        if self.r_offset == self.map.borrow().r_len {
+        if self.r_offset == self.map.r_len {
             return None;
         }
 
         // unsafe here
         let result = match unsafe {
-            let a: &mut Map<T> = self.map.as_ptr().as_mut()?;
+            let a = self.map as *mut Map<T>;
+            let a = a.as_mut()?; // convert a's lifetime
             a.get_mut(self.r_offset, self.c_offset)
         } {
             Some(a) => Some(((self.r_offset, self.c_offset), a)),
@@ -304,7 +302,7 @@ impl<'a, T: Clone + Debug> Iterator for MapIterMut<'a, T> {
         };
 
         self.c_offset += 1;
-        println!("result: {:?}", &result);
+        //println!("result: {:?}", &result);
         result
     }
 }
