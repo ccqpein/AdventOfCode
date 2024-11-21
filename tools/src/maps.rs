@@ -1,4 +1,7 @@
-use std::fmt::{Debug, Display};
+use std::{
+    cell::RefCell,
+    fmt::{Debug, Display},
+};
 
 #[derive(Debug)]
 pub struct Map<T> {
@@ -27,13 +30,13 @@ impl<T: Clone> Map<T> {
         self.c_len
     }
 
-    fn coop_cal(r: usize, c: usize) -> usize {
+    fn coop_cal(&self, r: usize, c: usize) -> usize {
         // c and r start from 0
-        c * r + c
+        self.c_len * r + c
     }
 
     pub fn get(&self, (x, y): (usize, usize)) -> Option<&T> {
-        self.inner.get(Self::coop_cal(x, y))
+        self.inner.get(self.coop_cal(x, y))
     }
 
     pub fn iter(&self) -> MapIter<'_, T> {
@@ -41,14 +44,8 @@ impl<T: Clone> Map<T> {
     }
 
     pub fn get_mut(&mut self, r: usize, c: usize) -> Option<&mut T> {
-        self.inner.get_mut(Self::coop_cal(r, c))
-    }
-
-    pub unsafe fn get_mut_uncheck(&mut self, r: usize, c: usize) -> Option<&mut T> {
-        match unsafe { self.inner.as_mut_ptr().add(Self::coop_cal(r, c)).as_mut() } {
-            Some(a) => Some(a),
-            None => None,
-        }
+        let x = self.coop_cal(r, c);
+        self.inner.get_mut(x)
     }
 
     pub fn set(&mut self, r: usize, c: usize, v: T) -> Result<(), String> {
@@ -193,7 +190,7 @@ impl<'a, T: Clone> IntoIterator for &'a Map<T> {
     }
 }
 
-impl<'a, T: Clone> IntoIterator for &'a mut Map<T> {
+impl<'a, T: Clone + Debug> IntoIterator for &'a mut Map<T> {
     type Item = ((usize, usize), &'a mut T);
     type IntoIter = MapIterMut<'a, T>;
 
@@ -269,7 +266,7 @@ where
     r_offset: usize,
     c_offset: usize,
 
-    map: &'a mut Map<T>,
+    map: RefCell<&'a mut Map<T>>,
 }
 
 impl<'a, T> MapIterMut<'a, T> {
@@ -277,32 +274,28 @@ impl<'a, T> MapIterMut<'a, T> {
         Self {
             r_offset: 0,
             c_offset: 0,
-            map: m,
+            map: RefCell::new(m),
         }
     }
 }
 
-impl<'a, T: Clone> Iterator for MapIterMut<'a, T> {
+impl<'a, T: Clone + Debug> Iterator for MapIterMut<'a, T> {
     type Item = ((usize, usize), &'a mut T);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.c_offset == self.map.c_len {
+        if self.c_offset == self.map.borrow().c_len {
             self.c_offset = 0;
             self.r_offset += 1;
         }
 
-        if self.r_offset == self.map.r_len {
+        if self.r_offset == self.map.borrow().r_len {
             return None;
         }
 
         // unsafe here
         let result = match unsafe {
-            let a = &mut self.map.inner;
-            let r = a
-                .as_mut_ptr()
-                .add(Map::<T>::coop_cal(self.r_offset, self.c_offset))
-                .as_mut();
-            r
+            let a: &mut Map<T> = self.map.as_ptr().as_mut()?;
+            a.get_mut(self.r_offset, self.c_offset)
         } {
             Some(a) => Some(((self.r_offset, self.c_offset), a)),
             None => {
@@ -311,6 +304,7 @@ impl<'a, T: Clone> Iterator for MapIterMut<'a, T> {
         };
 
         self.c_offset += 1;
+        println!("result: {:?}", &result);
         result
     }
 }
@@ -327,7 +321,7 @@ mod tests {
     fn map_test() {
         let mut m = Map::from(vec![vec![1, 2, 3], vec![1, 2, 3]]);
         for (i, v) in &m {
-            println!("{:?}", i);
+            println!("{:?} {:?}", i, v);
         }
 
         for (i, v) in &mut m {
@@ -350,7 +344,7 @@ mod tests {
         }
 
         for i in &mut v {
-            //print_type_of(i);
+            print_type_of(i);
         }
     }
 
