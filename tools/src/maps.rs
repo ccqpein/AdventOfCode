@@ -6,7 +6,8 @@ pub struct Map<T> {
     r_len: usize,
     c_len: usize,
 
-    inner: Vec<Vec<T>>,
+    //:= need to [[T]]? Or just one Vec<>
+    inner: Vec<T>,
 }
 
 impl<T: Clone> Map<T> {
@@ -14,7 +15,7 @@ impl<T: Clone> Map<T> {
         Self {
             r_len: r,
             c_len: c,
-            inner: vec![vec![init_v; c]; r],
+            inner: vec![init_v; r * c],
         }
     }
 
@@ -26,16 +27,13 @@ impl<T: Clone> Map<T> {
         self.c_len
     }
 
+    fn coop_cal(r: usize, c: usize) -> usize {
+        // c and r start from 0
+        c * r + c
+    }
+
     pub fn get(&self, (x, y): (usize, usize)) -> Option<&T> {
-        if let Some(r) = self.inner.get(x) {
-            if let Some(c) = r.get(y) {
-                Some(c)
-            } else {
-                None
-            }
-        } else {
-            None
-        }
+        self.inner.get(Self::coop_cal(x, y))
     }
 
     pub fn iter(&self) -> MapIter<'_, T> {
@@ -43,16 +41,18 @@ impl<T: Clone> Map<T> {
     }
 
     pub fn get_mut(&mut self, r: usize, c: usize) -> Option<&mut T> {
-        self.inner.get_mut(r)?.get_mut(c)
+        self.inner.get_mut(Self::coop_cal(r, c))
+    }
+
+    pub unsafe fn get_mut_uncheck(&mut self, r: usize, c: usize) -> Option<&mut T> {
+        match unsafe { self.inner.as_mut_ptr().add(Self::coop_cal(r, c)).as_mut() } {
+            Some(a) => Some(a),
+            None => None,
+        }
     }
 
     pub fn set(&mut self, r: usize, c: usize, v: T) -> Result<(), String> {
-        *self
-            .inner
-            .get_mut(r)
-            .ok_or("not found".to_string())?
-            .get_mut(c)
-            .ok_or("not found".to_string())? = v;
+        *self.get_mut(r, c).ok_or("not found".to_string())? = v;
         Ok(())
     }
 
@@ -79,7 +79,7 @@ impl<T: Clone> Map<T> {
             } else {
                 Some((
                     (r as usize, c as usize),
-                    self.inner.get(r as usize).unwrap().get(c as usize).unwrap(),
+                    self.get((r as usize, c as usize)).unwrap(),
                 ))
             }
         })
@@ -96,7 +96,7 @@ impl<T: Clone> Map<T> {
                 if r >= 0 && c >= 0 && (r as usize) < self.r_len && (c as usize) < self.c_len {
                     Some((
                         (r as usize, c as usize),
-                        self.inner.get(r as usize).unwrap().get(c as usize).unwrap(),
+                        self.get((r as usize, c as usize)).unwrap(),
                     ))
                 } else {
                     None
@@ -204,10 +204,14 @@ impl<'a, T: Clone> IntoIterator for &'a mut Map<T> {
 
 impl<T> From<Vec<Vec<T>>> for Map<T> {
     fn from(v: Vec<Vec<T>>) -> Self {
+        let r = v.len();
+        let c = v[0].len();
+        let vv = v.into_iter().map(|l| l.into_iter()).flatten().collect();
+
         Map {
-            r_len: v.len(),
-            c_len: v[0].len(),
-            inner: v,
+            r_len: r,
+            c_len: c,
+            inner: vv,
         }
     }
 }
@@ -232,7 +236,7 @@ impl<'a, T> MapIter<'a, T> {
     }
 }
 
-impl<'a, T> Iterator for MapIter<'a, T> {
+impl<'a, T: Clone> Iterator for MapIter<'a, T> {
     type Item = ((usize, usize), &'a T);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -247,8 +251,9 @@ impl<'a, T> Iterator for MapIter<'a, T> {
 
         let a = Some((
             (self.r_offset, self.c_offset),
-            &self.map.inner[self.r_offset][self.c_offset],
+            self.map.get((self.r_offset, self.c_offset)).unwrap(),
         ));
+
         self.c_offset += 1;
         a
     }
@@ -256,7 +261,10 @@ impl<'a, T> Iterator for MapIter<'a, T> {
 
 ///
 /// MapIterMut
-pub struct MapIterMut<'a, T: 'a> {
+pub struct MapIterMut<'a, T>
+where
+    T: 'a,
+{
     /// offsets are where is this map during iter
     r_offset: usize,
     c_offset: usize,
@@ -274,7 +282,7 @@ impl<'a, T> MapIterMut<'a, T> {
     }
 }
 
-impl<'a, T> Iterator for MapIterMut<'a, T> {
+impl<'a, T: Clone> Iterator for MapIterMut<'a, T> {
     type Item = ((usize, usize), &'a mut T);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -290,8 +298,11 @@ impl<'a, T> Iterator for MapIterMut<'a, T> {
         // unsafe here
         let result = match unsafe {
             let a = &mut self.map.inner;
-            let r = &mut *a.as_mut_ptr().add(self.r_offset) as &mut Vec<T>;
-            r.as_mut_ptr().add(self.c_offset).as_mut()
+            let r = a
+                .as_mut_ptr()
+                .add(Map::<T>::coop_cal(self.r_offset, self.c_offset))
+                .as_mut();
+            r
         } {
             Some(a) => Some(((self.r_offset, self.c_offset), a)),
             None => {
@@ -330,7 +341,7 @@ mod tests {
         }
 
         *m.get_mut(0, 0).unwrap() += 1;
-        assert_eq!(m.inner[0][0], 3);
+        assert_eq!(m.get((0, 0)), Some(&3));
 
         let mut v = vec![1, 2, 3];
         for i in &v {
