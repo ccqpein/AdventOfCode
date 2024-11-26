@@ -2,14 +2,13 @@ use regex::*;
 use std::{
     cell::{LazyCell, RefCell},
     collections::HashMap,
-    rc::Rc,
-    sync::LazyLock,
 };
 use tools::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct Tree {
-    value: String,
+    value: i32,
+    sum: i32,
     nodes: Option<RefCell<Vec<Tree>>>,
 }
 
@@ -45,12 +44,14 @@ fn make_node(
         }
 
         Tree {
-            value: table.get(key).unwrap().to_string(),
+            value: *table.get(key).unwrap(),
+            sum: *table.get(key).unwrap() + cc.iter().map(|node| node.sum).sum::<i32>(),
             nodes: Some(RefCell::new(cc)),
         }
     } else {
         Tree {
-            value: table.get(key).unwrap().to_string(),
+            value: *table.get(key).unwrap(),
+            sum: *table.get(key).unwrap(),
             nodes: None,
         }
     };
@@ -67,7 +68,7 @@ fn make_tree(inputs: &[String], top: String) -> Tree {
         match regex_input(line) {
             (name, number, Some(list)) => {
                 for child in list.split(", ") {
-                    dbg!(child);
+                    //dbg!(child);
                     table_children
                         .entry(name.clone())
                         .or_insert(vec![])
@@ -83,12 +84,18 @@ fn make_tree(inputs: &[String], top: String) -> Tree {
 
     //:= make tree
     let mut cache = HashMap::new();
-    for (_, children) in &table_children {
-        for child in children {
-            make_node(&child, &table, &table_children, &mut cache);
-        }
+    for (p, children) in &table_children {
+        make_node(&p, &table, &table_children, &mut cache);
     }
     cache.get(&top).unwrap().clone()
+}
+
+fn sum_the_tree(t: &Tree) -> i32 {
+    t.value
+        + match &t.nodes {
+            Some(c) => c.borrow().iter().map(|tt| sum_the_tree(tt)).sum(),
+            None => 0,
+        }
 }
 
 fn day7(inputs: &[String]) -> String {
@@ -114,6 +121,64 @@ fn day7(inputs: &[String]) -> String {
     c.clone()
 }
 
+// I cannot believe I need write this function
+fn find_the_diff_ele(tt: &[Tree]) -> Option<i32> {
+    let mut count_map = HashMap::new();
+
+    for n in tt {
+        *count_map.entry(n.sum).or_insert(0) += 1;
+    }
+
+    for n in tt {
+        if *count_map.get(&n.sum).unwrap() == 1 {
+            return Some(n.sum);
+        }
+    }
+
+    None
+}
+
+fn dig_tree(t: &Tree, other_sum: i32) -> i32 {
+    let diff_v = find_the_diff_ele(&t.nodes.as_ref().unwrap().borrow());
+    //dbg!(t);
+    //dbg!(diff_v);
+    if diff_v.is_none() {
+        return t.value - (t.sum - other_sum);
+    }
+
+    // find which tree
+    let next_t_ind = t
+        .nodes
+        .as_ref()
+        .unwrap()
+        .borrow()
+        .iter()
+        .position(|n| n.sum == diff_v.clone().unwrap())
+        .unwrap();
+
+    //dbg!(next_t_ind);
+    let next_t = t.nodes.as_ref().unwrap().borrow();
+
+    let next_t = next_t.get(next_t_ind).unwrap();
+
+    let other_v = t
+        .nodes
+        .as_ref()
+        .unwrap()
+        .borrow()
+        .iter()
+        .find(|n| n.sum != diff_v.unwrap())
+        .unwrap()
+        .sum;
+
+    dig_tree(next_t, other_v)
+}
+
+fn day7_2(inputs: &[String], top: String) -> i32 {
+    let tree = make_tree(inputs, top);
+    dig_tree(&tree, 0)
+}
+
 fn main() {
     let input = read_file_by_line("../inputs/day7.input");
     //let input = read_file_by_line("../inputs/day7_demo.input");
@@ -123,5 +188,8 @@ fn main() {
     // ));
     // dbg!(regex_input("ancik (61)"));
 
-    dbg!(day7(&input));
+    let top = day7(&input);
+    let tt = make_tree(&input, top);
+    //dbg!(&tt);
+    dbg!(dig_tree(&tt, 0));
 }
