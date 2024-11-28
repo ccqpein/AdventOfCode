@@ -1,3 +1,4 @@
+#![allow(unused_variables, dead_code)]
 use regex::*;
 use std::{
     cell::{LazyCell, RefCell},
@@ -189,7 +190,10 @@ fn main() {
     // dbg!(regex_input("ancik (61)"));
 
     let top = day7(&input);
-    let tt = make_tree(&input, top);
+
+    //let tt = make_tree(&input, top.clone());
     //dbg!(&tt);
-    dbg!(dig_tree(&tt, 0));
+    //dbg!(dig_tree(&tt, 0));
+
+    dbg!(day7_2(&input, top));
 }

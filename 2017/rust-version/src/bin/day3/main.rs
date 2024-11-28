@@ -52,7 +52,8 @@ fn day3_2(num: i32) -> i32 {
     let offset = 100000_i32;
     let mut m: Map<Option<i32>> = Map::new(200000, 200000, None);
 
-    m.set((0 + offset) as usize, (0 + offset) as usize, Some(1));
+    m.set((0 + offset) as usize, (0 + offset) as usize, Some(1))
+        .unwrap();
 
     for n in 2.. {
         let coop = get_coop(n);
@@ -69,7 +70,8 @@ fn day3_2(num: i32) -> i32 {
             (coop.1 + offset) as usize,
             (coop.0 + offset) as usize,
             Some(vv),
-        );
+        )
+        .unwrap();
     }
     //dbg!(m);
 
@@ -83,7 +85,7 @@ fn main() {
     // dbg!(get_coop(2));
     //dbg!(cal_coop(1, 2));
 
-    //dbg!(day3(361527));
+    dbg!(day3(361527));
     //dbg!(day3_2(2));
     dbg!(day3_2(361527));
 }

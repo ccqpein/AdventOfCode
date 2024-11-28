@@ -1,7 +1,5 @@
 use std::collections::{HashMap, HashSet};
 
-use itertools::Itertools;
-use tools::*;
 
 fn max_v_ind(input: &[i32]) -> usize {
     let vv = input.iter().max().unwrap();
@@ -80,7 +78,7 @@ fn main() {
     let mut input = vec![0, 5, 10, 0, 11, 14, 13, 4, 11, 8, 8, 7, 1, 4, 12, 11];
     //let mut input = vec![0, 2, 7, 0];
 
-    //dbg!(day6(&mut input));
+    dbg!(day6(&mut input));
 
     dbg!(day6_2(&mut input));
 }
