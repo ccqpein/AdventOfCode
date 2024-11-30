@@ -1,6 +1,7 @@
 #!/usr/bin/env ciel
 
 ;;; download the input of the aoc
+;;; example: download-input.lisp -y 2017 -d 9 -o ../inputs/day9.input
 
 (in-package :ciel-user)
 

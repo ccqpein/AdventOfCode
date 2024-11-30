@@ -55,7 +55,7 @@ pub enum GraphType {
     Directed,
 }
 
-/// value pairs of each nodes in graph
+#[doc = r"value pairs of each nodes in graph"]
 #[derive(Debug, Clone)]
 pub struct IDValuePiar<ID, V>
 where
@@ -238,7 +238,7 @@ where
                 return Err(GError::new(
                     GErrorType::CorruptedData,
                     "Cannot find the delete node",
-                ))
+                ));
             }
         };
 
@@ -250,7 +250,7 @@ where
                     return Err(GError::new(
                         GErrorType::CorruptedData,
                         "Cannot find the node of delete node",
-                    ))
+                    ));
                 }
             }
         }
@@ -529,7 +529,7 @@ where
                         return Err(GError::new(
                             GErrorType::CorruptedData,
                             "heap shouldn't be empty ",
-                        ))
+                        ));
                     }
                 },
                 None => return Ok((this, next, weight)),

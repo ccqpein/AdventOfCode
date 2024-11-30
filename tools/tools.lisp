@@ -148,38 +148,6 @@ all rest original elements sum"
                      result)))
       )))
 
-;;;;;;;;;;;;;;;;;;
-;; AOC stuff
-;;;;;;;;;;;;;;;;;;
-
-;; (defvar *aoc-session* nil "aoc session")
-;; (defvar *aoc-year* (nth 5 (multiple-value-list (get-decoded-time))) "aoc year")
-
-;; (defun download-input (day-num &key (session *aoc-session*) input-file-path)
-;;   "Get the {day-num} input. Maybe write to input-file-path.
-;; Need the session in cookie for authorizing."
-;;   (let ((out (make-string-output-stream))
-;; 		content)
-;; 	(sb-ext:run-program "curl"
-;; 						(list "-sL"
-;; 							  "-H"
-;; 							  (format nil "cookie: session=~a" session)
-;; 							  (format nil "https://adventofcode.com/~a/day/~a/input" *aoc-year* day-num)
-;; 							  )
-;; 						:search t
-;; 						:output out)
-	
-;; 	(setf content (get-output-stream-string out))
-	
-;; 	(if input-file-path
-;; 		(with-open-file (s input-file-path :direction :output :if-does-not-exist :create)
-;; 		  (format s content)))
-	
-;; 	content
-;; 	))
-
-;; (download-input 1 :session "lalalalalal" :input-file-path "../aoc2022/inputs/day1.input")
-
 ;;;;;;;;;;;;;;;;;
 ;; AOC map below
 ;;;;;;;;;;;;;;;;;

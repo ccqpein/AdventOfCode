@@ -1,4 +1,3 @@
-//#![feature(allocator_api)]
 use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
