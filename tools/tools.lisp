@@ -386,6 +386,11 @@ in map"
   "get all nodes of id in array. unsorted"
   (alexandria:hash-table-alist (gethash id (agraph-table graph))))
 
+(defun get-all-nodes-of-id-without-weight (graph id)
+  "get all nodes of id in array without weight. unsorted"
+  (let ((n (gethash id (agraph-table graph))))
+    (if n (mapcar #'car (alexandria:hash-table-alist n)))))
+
 (defun get-all-nodes (graph)
   (mapcar (lambda (id) (cons id (get-all-nodes-of-id graph id)))
           (alexandria:hash-table-keys (agraph-table graph))))
