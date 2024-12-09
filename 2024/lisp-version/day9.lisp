@@ -44,60 +44,29 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;(declaim (optimize (speed 3)))
+
 (defun parse-input-2 (input)
   (let ((input (mapcar #'parse-integer (mapcar #'string (concatenate 'list input)))))
     (do* ((rest input (cdr rest))
           (this (car rest) (car rest))
           (flag t)
-          (file-id 0)
-          (table (make-hash-table :test 'equal))
+          (file-id 0)          
           result)
-         ((not this) (values (reverse (remove-if (lambda (c) (= 0 (first c))) result))
-                             table))
+         ((not this) (reverse (remove-if (lambda (c) (= 0 (first c))) result)))
       (if flag
           (setf flag nil
                 result (push (list this file-id) result)
-                (gethash file-id table) this
                 file-id (1+ file-id))
           (setf flag t
-                result (push (list this #\.) result)))
-      )))
+                result (push (list this #\.) result))))))
 
 (defun new-placehold (empties file)
-  (list file
-        (if (> (- (first empties) (first file)) 0)
-            (list (- (first empties) (first file)) #\.)
-            nil)))
-
-(defun clean (l)
-  (do ((start 0)
-       (end 0)
-       (flag nil)
-       result)
-      ((>= end (length l)) result)
-    (if flag
-        (if (equal #\. (second (nth end l)))
-            (incf end)
-            (setf result (append result (list (list (loop for v in (subseq l start end)
-                                                          sum (first v))
-                                                    #\.)))
-                  start end
-                  flag nil))
-        (if (equal #\. (second (nth start l)))
-            (setf flag t
-                  end start)
-            (setf result (append result (list (nth start l)))
-                  start (1+ start)
-                  end start)))))
-
-(defun remove-l (l id ind)
-  (loop for v in l
-        for i upfrom 0
-        when v
-        if (and (equal (second v) id) (> i ind))
-          collect (list (first v) #\.)
-        else
-          collect v))
+  (let ((n (- (first empties)
+              (first file))))
+    (if (> n 0)
+        (list file (list n #\.))
+        (list file))))
 
 (defun sum-2 (l)
   (loop with ind = 0
@@ -108,27 +77,29 @@
         do (incf ind ph)))
 
 (defun day9-2 (input)
-  (multiple-value-bind (l table)
-      (parse-input-2 (car input))
-    (let ((largest-id (second (find-if-not (lambda (x) (equal (second x) #\.)) l :from-end t))))
-      (loop for id downfrom largest-id to 0
-            for file-detail = (gethash id table)
-            do (loop for x from 0 below (length l)
-                     for (spaces v) = (nth x l)
-                     while (not (equal v id)) 
-                     when (and (equal v #\.) (>= spaces file-detail))
-                       do (let ((new-slots (new-placehold (nth x l) (list file-detail id))))
-                            (setf l (append (subseq l 0 x)
-                                            new-slots
-                                            (subseq l (1+ x))))
-                            (setf l (clean (remove-l l id x))))
-                       and return nil)
-               (format t "id: ~a~%" id))
-      (sum-2 l))))
+  (let* ((l (parse-input-2 (car input)))
+         (largest-id (second (find-if-not (lambda (x) (equal (second x) #\.)) l :from-end t))))
+    (loop with end-ind = (1- (list-length l))
+          for id downfrom largest-id to 0
+          do (loop for rev-ind from end-ind downto 0
+                   for (file-space file-id) = (nth rev-ind l)
+                   when (equal file-id id)
+                     do (loop for ind from 0 below rev-ind
+                              for (spaces v) = (nth ind l)
+                              when (and (equal v #\.) (>= spaces file-space))
+                                do (let ((new-slots (new-placehold (nth ind l) (nth rev-ind l))))
+                                     (setf l (append (subseq l 0 ind)
+                                                     new-slots
+                                                     (subseq l (1+ ind) rev-ind)
+                                                     (list `(,file-space #\.))
+                                                     (subseq l (1+ rev-ind)))))
+                                and return nil)
+                        (setf end-ind rev-ind)
+                     and return nil)
+             ;;(format t "id: ~a~%" id)
+          )
+    (sum-2 l)))
 
 ;; 12730899074790 X
 ;; 12781586807198 X
 ;; 6287317016845
-
-;;(car (multiple-value-list (merge-it-2 (merge-it-2 (parse-input-2 "2333133121414131402")))))
-
