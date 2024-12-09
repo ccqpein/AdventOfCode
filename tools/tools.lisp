@@ -132,6 +132,21 @@ all rest original elements sum"
         (append (subseq l (- (length l) module-offset))
                 (subseq l 0 (- (length l) module-offset))))))
 
+(defun reduce-all-operations (l ops)
+  "reduce list with all ops
+
+Example:
+(apply-operations '(11 6 16 20) (list #'+ #'*)) =>
+list of all result: 11 +/* 6 +/* 16 +/* 20"
+  (if (= 0 (length l)) (return-from reduce-all-operations nil))
+  (loop with buckets = (list (car l))
+        for v in (cdr l)
+        do (setf buckets
+                 (loop for previous-v in buckets
+                       append (loop for op in ops
+                                    collect (funcall op previous-v v))))
+        finally (return buckets)))
+
 ;;;;;;;;;;;;;;;;
 ;; some str helper function below
 ;;;;;;;;;;;;;;;;
@@ -511,69 +526,6 @@ in map"
                                  (gethash (list ,@cache-syms) ,table-name) ,cache-v)
                            ,cache-v)))
           ))))
-
-;; (defun expand-match-branch (str block patterns forms)
-;;   (case patterns
-;;     ((t 'otherwise) `(return-from ,block (progn ,@forms)))
-;;     (t (loop with regex = '("^")
-;;              and vars = '()
-;;              and ind = 0
-;;              for x in patterns
-;;              do (cond ((stringp x)
-;;                        (push x regex))
-;;                       ((symbolp x)
-;;                        (push "(.*)" regex)
-;;                        (push (list x ind) vars)
-;;                        (incf ind))
-;;                       (t (error "only symbol and string allowed in patterns")))
-;;              finally (push "$" regex)
-;;              finally (setf vars (reverse vars))
-;;              finally (return (let ((whole-str (gensym))
-;;                                    (regs (gensym)))
-;;                                `(multiple-value-bind (,whole-str ,regs)
-;;                                     (cl-ppcre:scan-to-strings
-;;                                      ,(apply #'str:concat (reverse regex))
-;;                                      ,str)
-;;                                   (declare (ignore ,whole-str))
-;;                                   (when ,regs
-;;                                     (let ,(loop for (v ind) in vars
-;;                                                 unless (string= (symbol-name v) "_")
-;;                                                   collect v)
-;;                                       ,@(loop for (v ind) in vars
-;;                                               unless (string= (symbol-name v) "_")
-;;                                                 collect `(setf ,v (elt ,regs ,ind)))
-;;                                       (return-from ,block
-;;                                         (progn ,@forms)))))))))))
-
-;; (defmacro string-match (str &body match-branches)
-;;   (let ((block-sym (gensym)))
-;;     `(block ,block-sym
-;;        ,@(loop for statement in match-branches
-;;                collect (expand-match-branch
-;;                         str
-;;                         block-sym
-;;                         (nth 0 statement)
-;;                         (cdr statement))))))
-
-;; (str-match "a1c5b"
-;;   (("a" b "c") (parse-integer b))
-;;   (("a" x "c" y "b") (print (parse-integer x)) (print (parse-integer y)) (list (parse-integer x) (parse-integer y)))
-;;   (t (print "aa")))
-
-;; (trivia:match "a1c5b"
-;;   ((string "a" b "c") (parse-integer b))
-;;   ((string "a" x "c" y "b") (print (parse-integer x)) (print (parse-integer y)) (list (parse-integer x) (parse-integer y)))
-;;   (t (print "aa")))
-
-;; (trivia:match #(1 2 3)
-;;   ((vector _ x _)
-;;    x))
-
-;; (trivia:match '(1 2 3)
-;;   ((list* 1 x _)
-;;    x)
-;;   ((list* _ x)
-;;    x)) ;; => 2
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; some algorithm
