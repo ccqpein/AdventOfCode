@@ -24,7 +24,6 @@
   (let ((e (get-aoc-map-ele map coop)))
     (if (= e 9) (return-from one-step (list (list coop))))
     (let ((nexts (around-one-larger map coop e)))
-      (if (not nexts) (return-from one-step nil))
       (loop for next in nexts
             append (loop for trail in (one-step map next)
                          collect (cons coop trail))))))
