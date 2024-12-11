@@ -503,6 +503,7 @@ in map"
     ))
 
 (defmacro lru (cache-syms func-declare)
+  "lru function macro. CANNOT use return-from inside yet"
   (if (not (eq 'defun (car func-declare))) (error "only for function"))
   (let ((table-name (gensym))
         (shadow-func-name (gensym))
