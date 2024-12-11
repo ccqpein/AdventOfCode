@@ -43,7 +43,6 @@
 ;;                                        and sum (gethash c c-table)))
 ;;                       and sum (gethash b b-table)))))
 
-
 ;;;;;;;;;;;
 
 (lru (stones times)
@@ -80,3 +79,17 @@
                                        do (setf (gethash c c-table) (length (blink-2 (list c) 25)))
                                        and sum (gethash c c-table)))
                       and sum (gethash b b-table)))))
+
+;;;;;;;;;;;;;;;;;;;
+
+(defun day11 (input times)
+  (let ((table (make-hash-table :test 'equal)))
+    (loop for e in input do (incf (gethash e table 0)))
+    (loop repeat times
+          do (loop with new-table = (make-hash-table :test 'equal)
+                   for k being each hash-key in table
+                     using (hash-value v)
+                   do (loop for e in (blink (list k))
+                            do (incf (gethash e new-table 0) v))
+                      (setf table new-table))
+          finally (return (apply #'+ (alexandria:hash-table-values table))))))
