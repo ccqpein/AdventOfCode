@@ -276,23 +276,9 @@ V  row number from 0 to row length
       (gethash coop (amap-coop-ele map))
       (nth-nest (amap-raw-map map) coop)))
 
-(defun print-raw-map (map)
-  (format t "~{~{~a~}~%~}~%" (amap-raw-map map)))
-
-(defun aoc-map-beyond-the-range (map coop)
-  (not (and (<= 0 (car coop) (1- (get-aoc-map-rows-len map)))
-            (<= 0 (cadr coop) (1- (get-aoc-map-cols-len map))))))
-
-(defun transpose-aoc-map (map)
-  (let ((raw-map (amap-raw-map map))
-        (ele-frequency (if (amap-ele-frequency map) t))
-        (ele-coops (if (amap-ele-coops map) t))
-        (coop-ele (if (amap-coop-ele map) t)))
-    (gen-aoc-map raw-map
-                 :ele-frequency ele-frequency
-                 :ele-coops ele-coops
-                 :coop-ele coop-ele
-                 :is-cols t)))
+(defun get-aoc-map-coops-of-ele (map ele)
+  "return all coops of this ele"
+  (gethash ele (amap-ele-coops map)))
 
 (defun set-aoc-map-ele (map coop ele)
   "use set-aoc-map-ele set the ele because this will also change some table records 
@@ -312,29 +298,6 @@ in map"
         (progn (decf (gethash old-ele (amap-ele-frequency map)))
                (incf (gethash ele (amap-ele-frequency map) 0))))
     ))
-
-;;; test
-;; (let ((m (gen-aoc-map '((0 1 2) (3 4 5))
-;;                       :ele-coops t
-;;                       :coop-ele t
-;;                       :ele-frequency t)))
-;;   (set-aoc-map-ele m '(0 1) 10)
-;;   (print-raw-map m)
-;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-coops m)))
-;;   (format t "~a~%" (alexandria:hash-table-alist (amap-coop-ele m)))
-;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-frequency m)))
-
-;;   (set-aoc-map-eles m '(((0 1) 1) ((0 0) 10)))
-;;   (print-raw-map m)
-;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-coops m)))
-;;   (format t "~a~%" (alexandria:hash-table-alist (amap-coop-ele m)))
-;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-frequency m)))
-
-;;   (set-aoc-map-eles m '(((0 0) 1) ((0 2) 1)))
-;;   (print-raw-map m)
-;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-coops m)))
-;;   (format t "~a~%" (alexandria:hash-table-alist (amap-coop-ele m)))
-;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-frequency m))))
 
 (defun set-aoc-map-eles (map coop-eles)
   "coop-ele => (((r c) ele) ...)"
@@ -359,6 +322,136 @@ in map"
           (get-aoc-map-rows-len map))
   (loop for r from 0 below (get-aoc-map-rows-len map)
         do (set-aoc-map-ele map (list r col-num) (nth r new-col))))
+
+;;; some map helper function below
+
+(defun print-raw-map (map)
+  (format t "~{~{~a~}~%~}~%" (amap-raw-map map)))
+
+(defun aoc-map-beyond-the-range (map coop)
+  (not (and (<= 0 (car coop) (1- (get-aoc-map-rows-len map)))
+            (<= 0 (cadr coop) (1- (get-aoc-map-cols-len map))))))
+
+(defun transpose-aoc-map (map)
+  (let ((raw-map (amap-raw-map map))
+        (ele-frequency (if (amap-ele-frequency map) t))
+        (ele-coops (if (amap-ele-coops map) t))
+        (coop-ele (if (amap-coop-ele map) t)))
+    (gen-aoc-map raw-map
+                 :ele-frequency ele-frequency
+                 :ele-coops ele-coops
+                 :coop-ele coop-ele
+                 :is-cols t)))
+
+(defun aoc-map-around-coop (map coop &key (dir 'around) can-beyond-range with-dir)
+  "dir can be hor-ver, around, hor, or ver"
+  (let (offsets)
+    (setf offsets
+          (ecase dir
+            (hor-ver '(((-1 0) up) ((0 -1) left) ((0 1) right) ((1 0) down)))
+            (around '(((-1 -1) NW) ((-1 0) N) ((-1 1) NE) ((0 -1) W) ((0 1) E) ((1 -1) SW) ((1 0) S) ((1 1) SE)))
+            (hor '(((0 -1) left) ((0 1) right)))
+            (ver '(((-1 0) up) ((1 0) down)))))
+    (loop for (offset dir) in offsets
+          for c = (mapcar #'+ offset coop)
+          for br = (aoc-map-beyond-the-range map c)
+          when (or can-beyond-range (not br))
+            if with-dir
+              collect (list c dir)
+          else 
+            collect c)))
+
+(defstruct (aoc-map-segment (:conc-name amap-segment-))
+  coops ;; list of all coops of this segment
+  ele ;; this segment's element
+  edges ;; the edges of this segment, depend on the dir
+  )
+
+(defun aoc-map-segment
+    (map &key
+           (dir 'around)
+           can-beyond-range
+           deduplicated-edges)
+  "if the map is pieced together with a lot segments/chunks/group of elements,
+this function should return all segments. Dir for detect which are legal neighbors, 
+check aoc-map-around-coop for more info.
+
+Like: https://adventofcode.com/2024/day/12"
+  (let ((visited-coops (make-hash-set))
+        segments)
+    (do ((next '((0 0)) (cdr next)))
+        ((null next) segments)
+      (unless (set-get visited-coops (car next))
+        ;; touched is the other segment which walked when checking edges
+        (multiple-value-bind (all-this-coops edges touched)
+            (do* ((inside-visit (make-hash-set))
+                  (ele (get-aoc-map-ele map (car next)))
+                  (in-seg-next (list (list (car next) ele)) (cdr in-seg-next))
+                  (this (car in-seg-next) (car in-seg-next)) ;; (coop ele maybe-edge-dir)
+                  (touched '())
+                  (edges '()))
+                 ((not this)
+                  (values (set-to-list inside-visit)
+                          ;; sometimes edges can be duplicated
+                          ;; because reached from diff directions
+                          ;; so if one edge reached from diff directions
+                          ;; I don't know which one will left
+                          (if deduplicated-edges
+                              (remove-duplicates edges :test 'equal :key 'first)
+                              edges)
+                          touched))
+              (unless (set-get inside-visit (first this))
+                (if (aoc-map-beyond-the-range map (first this))
+                    (push this edges)
+                    (if (equal ele (second this))
+                        (progn (set-insert inside-visit (first this))
+                               (setf in-seg-next
+                                     (append in-seg-next
+                                             (loop for (x d) in
+                                                             (aoc-map-around-coop
+                                                              map
+                                                              (first this)
+                                                              :dir dir
+                                                              :can-beyond-range can-beyond-range
+                                                              :with-dir t)
+                                                   collect (list x (get-aoc-map-ele map x) d)))))
+                        (progn (push this edges)
+                               (push (first this) touched))))))
+
+          ;; all this segment are visited
+          (dolist (c all-this-coops) (set-insert visited-coops c))
+          ;; next "touched" point
+          (setf next (append next touched))
+          ;; make segments
+          (push (make-aoc-map-segment
+                 :coops all-this-coops
+                 :ele (get-aoc-map-ele map (car next))
+                 :edges edges)
+                segments)
+          )))))
+
+;;; test
+;; (let ((m (gen-aoc-map '((0 1 2) (3 4 5))
+;;                       :ele-coops t
+;;                       :coop-ele t
+;;                       :ele-frequency t)))
+;;   (set-aoc-map-ele m '(0 1) 10)
+;;   (print-raw-map m)
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-coops m)))
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-coop-ele m)))
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-frequency m)))
+
+;;   (set-aoc-map-eles m '(((0 1) 1) ((0 0) 10)))
+;;   (print-raw-map m)
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-coops m)))
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-coop-ele m)))
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-frequency m)))
+
+;;   (set-aoc-map-eles m '(((0 0) 1) ((0 2) 1)))
+;;   (print-raw-map m)
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-coops m)))
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-coop-ele m)))
+;;   (format t "~a~%" (alexandria:hash-table-alist (amap-ele-frequency m))))
 
 ;;;;;;;;;;;;;;;;;
 ;; AOC graph below

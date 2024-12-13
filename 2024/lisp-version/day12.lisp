@@ -151,3 +151,45 @@
 (defun day12 (&optional part2 (input *input*))
   (let ((m (parse-input input)))
     (walk-map-2 part2 m)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;; use the toolbox below
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;; (let ((m (parse-input *input-demo*))
+;;       )
+;;   (aoc-map-around-coop m '(0 0) :can-beyond-range t :with-dir t))
+
+
+
+;; (let ((m (parse-input *input-demo*)))
+;;   ;;(format t "~{~a~%~}" (aoc-map-segment m :dir 'hor-ver :can-beyond-range t))
+;;   (format t "~{~a~%~}" (aoc-map-segment m :dir 'hor-ver :can-beyond-range t :deduplicated-edges t))
+;;   )
+
+;;:= todo
+(defun day12-pro (&optional part2 (input *input*))
+  (let ((m (parse-input input )))
+    (let ((segments (aoc-map-segment m :dir 'hor-ver
+                                       :can-beyond-range t
+                                       )))
+      ;;(format t "~{~a~%~}" segments)
+      (if part2
+          (loop for s in segments
+                for new-edges = (loop for e in (amap-segment-edges s) ;; change for cal-side
+                                      collect (list (first e)
+                                                    (cond ((equal 'up (third e)) "U")
+                                                          ((equal 'down (third e)) "D")
+                                                          ((equal 'left (third e)) "L")
+                                                          ((equal 'right (third e)) "R"))))
+                ;;do (format t "~{~a~%~}" new-edges)
+                sum (* (length (amap-segment-coops s))
+                       (cal-sides new-edges)))
+          (loop for s in segments
+                sum (* (length (amap-segment-coops s))
+                       (length (amap-segment-edges s))))
+          ))))
+
+(= 1485656 (day12-pro nil *input*))
+(= 899196 (day12-pro t *input*))
