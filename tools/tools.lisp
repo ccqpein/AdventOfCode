@@ -178,6 +178,18 @@ list of all result: 11 +/* 6 +/* 16 +/* 20"
   ;;:= meybe need infinity here
   )
 
+;;:= need fingure out copy
+(defun clone-aoc-map (m)
+  (make-aoc-map
+   :raw-map (loop for l in (amap-raw-map m)
+                  collect (copy-list l))
+   :row-num (amap-row-num m)
+   :col-num (amap-col-num m)
+   :ele-frequency (if (amap-ele-frequency m) (alexandria:copy-hash-table (amap-ele-frequency m)))
+   :ele-coops (if (amap-ele-coops m) (alexandria:copy-hash-table (amap-ele-coops m)))
+   :coop-ele (if (amap-coop-ele m) (alexandria:copy-hash-table (amap-coop-ele m)))
+   ))
+
 (defun gen-aoc-map (input &key is-cols ele-frequency ele-coops coop-ele line-op)
   "gen aoc map from input (two dimensions list)
 
@@ -430,6 +442,19 @@ Like: https://adventofcode.com/2024/day/12"
                 segments)
           )))))
 
+(defun aoc-map-to-graph (m &key (dir 'around))
+  "Transfer map to undirection graph, dir keyword control if center connect with around or something else.
+Weight is the value of the neighbors"
+  (let ((graph (make-graph :graph-type 'undirected))
+        (visited (make-hash-set)))
+    (loop for r from 0 to (get-aoc-map-rows-len m)
+          do (loop for c from 0 to (get-aoc-map-cols-len m)
+                   do (loop for coop in (aoc-map-around-coop m `(,r ,c) :dir dir)
+                            unless (set-get visited coop)
+                              do (insert-graph-node graph `(,r ,c) coop (get-aoc-map-ele m `(,r ,c)))
+                                 (set-insert visited `(,r ,c)))))
+    graph))
+
 ;;; test
 ;; (let ((m (gen-aoc-map '((0 1 2) (3 4 5))
 ;;                       :ele-coops t
@@ -503,8 +528,11 @@ Like: https://adventofcode.com/2024/day/12"
   (mapcar (lambda (id) (cons id (get-all-nodes-of-id graph id)))
           (alexandria:hash-table-keys (agraph-table graph))))
 
-(defun dijkstra (graph start-id end-id &key (sort-fun #'<))
-  "graph has to be id -> (id value). The id must be can get with #'first"
+(defun dijkstra (graph start-id &key end-id (sort-fun #'<))
+  "graph has to be id -> (id value). The id must be can get with #'first
+
+With end-id will be stop when reach from start id to end id; Without end-id will
+try to walk all points"
   (let (;; other id to start-id distance 
         (distance-table (make-hash-table :test 'equal))
         (set (make-hash-set)))
@@ -524,8 +552,8 @@ Like: https://adventofcode.com/2024/day/12"
           (this-to-start-value (gethash this distance-table)
                                (gethash this distance-table)))
          
-         ((or (equal this end-id) (not this))
-          this-to-start-value)
+         ((or (and end-id (equal this end-id)) (not this))
+          distance-table)
       
       ;;(format t "this is ~a, heap is ~a~%" this (slot-value next-round 'cl-heap::data))
       (if (set-get set this)
