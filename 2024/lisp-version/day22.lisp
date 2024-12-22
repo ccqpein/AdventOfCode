@@ -17,6 +17,7 @@
     ss))
 
 (defun next-n-number (s time)
+  (declare (integer s))
   (loop repeat time
         do (setf s (next-number s))
         finally (return s)))
@@ -49,7 +50,37 @@
     
     (apply #'max (alexandria:hash-table-values table))))
 
+(defun opt-part2 (input)
+  (declare (optimize speed (space 0)))
+  (let ((table (make-hash-table :test 'equal)))
+    (loop for line in input
+          do (do* ((set (make-hash-set))
+                   (a (parse-integer line) b)
+                   (aa (mod a 10) bb)
+                   (b (next-number a) c)
+                   (bb (mod b 10) cc)
+                   (c (next-number b) d)
+                   (cc (mod c 10) dd)
+                   (d (next-number c) e)
+                   (dd (mod d 10) ee)
+                   (e (next-number d) (next-number d))
+                   (ee (mod e 10) (mod e 10))
+                   (ind 4 (1+ ind)))
+                  ((> ind 2000) nil)
+               (declare (integer a b c d e)
+                        (fixnum aa bb cc dd ee)
+                        (optimize speed))
+               (let* ((seq (loop for (x y) on (list aa bb cc dd ee) by #'cdr
+                                 while y
+                                 collect (- y x))))
+                 (unless (set-get set seq)
+                   (incf (the fixnum (gethash seq table 0)) ee)
+                   (set-insert set seq)))))
+    (loop for v being each hash-value of table
+          maximize v)))
+
 (defun day22 (input &optional part2)
   (if part2
-      (bf-part2 input)
+      ;; (bf-part2 input)
+      (opt-part2 input)
       (apply #'+ (mapcar (lambda (num) (next-n-number (parse-integer num) 2000)) input))))
