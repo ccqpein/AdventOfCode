@@ -66,7 +66,7 @@
                    (e (next-number d) (next-number d))
                    (ee (mod e 10) (mod e 10))
                    (ind 4 (1+ ind)))
-                  ((> ind 2000) nil)
+                  ((= ind 2000) nil)
                (declare (integer a b c d e)
                         (fixnum aa bb cc dd ee)
                         (optimize speed))

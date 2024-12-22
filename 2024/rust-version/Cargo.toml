@@ -7,3 +7,4 @@ edition = "2024"
 regex = "1"
 tools = { path = "../../tools" }
 itertools = "0"
+rayon = "1"
