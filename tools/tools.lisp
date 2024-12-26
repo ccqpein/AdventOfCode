@@ -442,19 +442,6 @@ Like: https://adventofcode.com/2024/day/12"
                 segments)
           )))))
 
-(defun aoc-map-to-graph (m &key (dir 'around))
-  "Transfer map to undirection graph, dir keyword control if center connect with around or something else.
-Weight is the value of the neighbors"
-  (let ((graph (make-graph :graph-type 'undirected))
-        (visited (make-hash-set)))
-    (loop for r from 0 to (get-aoc-map-rows-len m)
-          do (loop for c from 0 to (get-aoc-map-cols-len m)
-                   do (loop for coop in (aoc-map-around-coop m `(,r ,c) :dir dir)
-                            unless (set-get visited coop)
-                              do (insert-graph-node graph `(,r ,c) coop (get-aoc-map-ele m `(,r ,c)))
-                                 (set-insert visited `(,r ,c)))))
-    graph))
-
 ;;; test
 ;; (let ((m (gen-aoc-map '((0 1 2) (3 4 5))
 ;;                       :ele-coops t
@@ -515,6 +502,19 @@ Weight is the value of the neighbors"
            (setf (gethash id (gethash other-id (agraph-table graph))) weight)))
         ))
 
+(defun aoc-map-to-graph (m &key (dir 'around))
+  "Transfer map to undirection graph, dir keyword control if center connect with around or something else.
+Weight is the value of the neighbors"
+  (let ((graph (make-graph :graph-type 'undirected))
+        (visited (make-hash-set)))
+    (loop for r from 0 to (get-aoc-map-rows-len m)
+          do (loop for c from 0 to (get-aoc-map-cols-len m)
+                   do (loop for coop in (aoc-map-around-coop m `(,r ,c) :dir dir)
+                            unless (set-get visited coop)
+                              do (insert-graph-node graph `(,r ,c) coop (get-aoc-map-ele m `(,r ,c)))
+                                 (set-insert visited `(,r ,c)))))
+    graph))
+
 (defun get-all-nodes-of-id (graph id)
   "get all nodes of id in array. unsorted"
   (alexandria:hash-table-alist (gethash id (agraph-table graph))))
@@ -528,7 +528,7 @@ Weight is the value of the neighbors"
   (mapcar (lambda (id) (cons id (get-all-nodes-of-id graph id)))
           (alexandria:hash-table-keys (agraph-table graph))))
 
-(defun dijkstra (graph start-id &key end-id (sort-fun #'<))
+(defmethod dijkstra ((graph aoc-graph) start-id &key end-id (sort-fun #'<))
   "graph has to be id -> (id value). The id must be can get with #'first
 
 With end-id will be stop when reach from start id to end id; Without end-id will
@@ -546,9 +546,6 @@ try to walk all points"
                                      :sort-fun sort-fun
                                      :key #'second))
           
-          (this-connected-nodes (get-all-nodes-of-id graph this)
-                                (get-all-nodes-of-id graph this))
-          
           (this-to-start-value (gethash this distance-table)
                                (gethash this distance-table)))
          
@@ -559,7 +556,7 @@ try to walk all points"
       (if (set-get set this)
           (progn ;;(format t "this ~a has already visited, pass~%" this)
             nil)
-          (loop for (id . v) in this-connected-nodes
+          (loop for (id . v) in (get-all-nodes-of-id graph this)
                 unless (set-get set id)
                   if (or (not (gethash id distance-table))
                          (> (gethash id distance-table) (+ this-to-start-value v)))
@@ -576,19 +573,37 @@ try to walk all points"
       (setf this (first (cl-heap:pop-heap next-round)))
       )))
 
+(defun find-id (graph start-id end-id &key steps visited)
+  "find from start to end, return all possible path"
+  (if steps
+      ;; if has step limit
+      (if (= 1 steps)
+          (loop for n in (get-all-nodes-of-id-without-weight graph start-id)
+                when (equal n end-id)
+                  collect (reverse (cons end-id (cons start-id visited))))
+          (loop for n in (get-all-nodes-of-id-without-weight graph start-id)
+                append (find-id graph n end-id
+                                :steps (1- steps)
+                                :visited (cons start-id visited))))
+      
+      (loop for n in (get-all-nodes-of-id-without-weight graph start-id)
+            unless (member n visited :test 'equal)
+              append (find-id graph n end-id
+                              :visited (cons start-id visited)))))
+
 ;; example from wiki
-;; (let ((g (make-graph :graph-type 'undirected)))
-;;   (insert-graph-node g 1 2 7)
-;;   (insert-graph-node g 1 6 14)
-;;   (insert-graph-node g 1 3 9)
-;;   (insert-graph-node g 2 3 10)
-;;   (insert-graph-node g 2 4 15)
-;;   (insert-graph-node g 3 6 2)
-;;   (insert-graph-node g 3 4 11)
-;;   (insert-graph-node g 6 5 9)
-;;   (insert-graph-node g 4 5 6)
-;;   ;;(get-all-nodes-of-id g 1)
-;;   (dijkstra g 1 5))
+(let ((g (make-graph :graph-type 'undirected)))
+  (insert-graph-node g 1 2 7)
+  (insert-graph-node g 1 6 14)
+  (insert-graph-node g 1 3 9)
+  (insert-graph-node g 2 3 10)
+  (insert-graph-node g 2 4 15)
+  (insert-graph-node g 3 6 2)
+  (insert-graph-node g 3 4 11)
+  (insert-graph-node g 6 5 9)
+  (insert-graph-node g 4 5 6)
+  ;;(get-all-nodes-of-id g 1)
+  (dijkstra g 1 :end-id 5))
 
 
 ;;;;;;;;;;;;;;;
@@ -647,6 +662,28 @@ try to walk all points"
                                                  (list ,@(lambda-list-to-argument (nth 2 func-declare))))
                                  (gethash (list ,@cache-syms) ,table-name) ,cache-v)
                            ,cache-v)))
+          ))))
+
+(defmacro lru-2 (cache-syms func-declare)
+  "lru function macro. CANNOT use return-from inside yet"
+  (if (not (eq 'defun (car func-declare))) (error "only for function"))
+  (let ((table-name (gensym))
+        (cache-v (gensym)))
+    `(let ((,table-name (make-hash-table :test 'equal)))
+       ,(let ((cut-pos 3))
+          (loop while
+                (cond ((stringp (nth cut-pos func-declare))
+                       (incf cut-pos)
+                       t)
+                      ((eq 'declare (car (nth cut-pos func-declare)))
+                       (incf cut-pos)
+                       t)
+                      (t nil)))
+          (append (subseq func-declare 0 cut-pos)
+                  (list `(let ((,cache-v (gethash (list ,@cache-syms) ,table-name)))
+                           (if ,cache-v (return-from ,(nth 1 func-declare) ,cache-v))
+                           (setf (gethash (list ,@cache-syms) ,table-name)
+                                 (progn ,@(subseq func-declare cut-pos))))))
           ))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
