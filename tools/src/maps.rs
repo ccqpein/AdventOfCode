@@ -7,7 +7,6 @@ pub struct Map<T> {
     r_len: usize,
     c_len: usize,
 
-    //:= need to [[T]]? Or just one Vec<>
     inner: Vec<T>,
 }
 

@@ -175,10 +175,8 @@ list of all result: 11 +/* 6 +/* 16 +/* 20"
   ele-frequency ;; element frequency of all elements in map
   ele-coops ;; pair map that (row col) => element
   coop-ele ;; pair map that element => (row col)
-  ;;:= meybe need infinity here
   )
 
-;;:= need fingure out copy
 (defun clone-aoc-map (m)
   (make-aoc-map
    :raw-map (loop for l in (amap-raw-map m)
@@ -355,8 +353,8 @@ in map"
                  :coop-ele coop-ele
                  :is-cols t)))
 
-(defun aoc-map-around-coop (map coop &key (dir 'around) can-beyond-range with-dir)
-  "dir can be hor-ver, around, hor, or ver"
+(defun aoc-map-around-coop (map coop &key (dir 'hor-ver) can-beyond-range with-dir)
+  "dir can be hor-ver, around, hor, or ver. return (list (around-coop [dir])*)"
   (let (offsets)
     (setf offsets
           (ecase dir
@@ -373,15 +371,66 @@ in map"
           else 
             collect c)))
 
+(defun aoc-map-dijkstra-start-with-dir-p (start)
+  (typep start '(cons (cons fixnum (cons fixnum null)) (cons * null))))
+
+(deftype aoc-map-dijkstra-start-with-dir ()
+  `(satisfies aoc-map-dijkstra-start-with-dir-p))
+
+(defun aoc-map-dijkstra-start-without-dir-p (start)
+  (typep start '(cons fixnum (cons fixnum null))))
+
+(deftype aoc-map-dijkstra-start-without-dir ()
+  `(satisfies aoc-map-dijkstra-start-without-dir-p))
+
+;;:= todo: move 2024 day 16/20/18 function here; careful the direction
+(defmethod dijkstra ((map aoc-map) start
+                     &key
+                       ;; if end-id isn't nil, return immediately when
+                       ;; reach the end-id. pure id, no direction
+                       end 
+                       with-dir ;; if it is t, one slot visit with different dir will treat differently
+                       (next-steps #'aoc-map-around-coop) ;; the function that how to move
+                       (sort-fun #'<) ;; sort fun for heap
+                       (dir 'hor-ver)
+                       (cannot #\#) ;; the char that cannot visit
+                       (can #\.) ;; the element that shows available to move
+                     &allow-other-keys)
+  "dijkstra for map"
+  (if with-dir
+      (assert (typep start 'aoc-map-dijkstra-start-with-dir))
+      (assert (typep start 'aoc-map-dijkstra-start-without-dir)))
+  
+  (let ((distance-table (make-hash-table :test 'equal))
+        (visited (make-hash-set))
+        ;; start either (0 row col dir) or (0 row col)
+        (start (if with-dir (cons 0 (append (first start) (cdr start))) (cons 0 start))))
+    (setf (gethash (cdr start) distance-table) 0)
+    (format t "start: ~a~%" start)
+    (do ((this start) ;; (cost row col [dir])
+         (next-round (make-instance 'cl-heap:binary-heap
+                                    :sort-fun #'<
+                                    :key #'first))
+         (this-to-start-value (gethash (cdr this) distance-table)
+                              (gethash (cdr this) distance-table)))
+        ((or (and end (subseq this 1 3)) ;; has end
+             (not this))
+         distance-table)
+      (if (set-get visited (cdr this))
+          nil ;;:= todo
+          )
+      )
+    ))
+
 (defstruct (aoc-map-segment (:conc-name amap-segment-))
   coops ;; list of all coops of this segment
-  ele ;; this segment's element
+  ele   ;; this segment's element
   edges ;; the edges of this segment, depend on the dir
   )
 
 (defun aoc-map-segment
     (map &key
-           (dir 'around)
+           (dir 'hor-ver)
            can-beyond-range
            deduplicated-edges)
   "if the map is pieced together with a lot segments/chunks/group of elements,
@@ -528,7 +577,7 @@ Weight is the value of the neighbors"
   (mapcar (lambda (id) (cons id (get-all-nodes-of-id graph id)))
           (alexandria:hash-table-keys (agraph-table graph))))
 
-(defmethod dijkstra ((graph aoc-graph) start-id &key end-id (sort-fun #'<))
+(defmethod dijkstra ((graph aoc-graph) start-id &key end-id (sort-fun #'<) &allow-other-keys)
   "graph has to be id -> (id value). The id must be can get with #'first
 
 With end-id will be stop when reach from start id to end id; Without end-id will

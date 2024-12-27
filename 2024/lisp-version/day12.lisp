@@ -168,13 +168,12 @@
 ;;   (format t "~{~a~%~}" (aoc-map-segment m :dir 'hor-ver :can-beyond-range t :deduplicated-edges t))
 ;;   )
 
-;;:= todo
 (defun day12-pro (&optional part2 (input *input*))
   (let ((m (parse-input input )))
     (let ((segments (aoc-map-segment m :dir 'hor-ver
                                        :can-beyond-range t
                                        )))
-      ;;(format t "~{~a~%~}" segments)
+      (format t "~{~a~%~}" segments)
       (if part2
           (loop for s in segments
                 for new-edges = (loop for e in (amap-segment-edges s) ;; change for cal-side
