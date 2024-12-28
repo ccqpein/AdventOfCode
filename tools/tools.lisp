@@ -383,7 +383,6 @@ in map"
 (deftype aoc-map-dijkstra-start-without-dir ()
   `(satisfies aoc-map-dijkstra-start-without-dir-p))
 
-;;:= todo: move 2024 day 16/20/18 function here; careful the direction
 (defmethod dijkstra ((map aoc-map) start
                      &key
                        ;; if end-id isn't nil, return immediately when
@@ -392,9 +391,11 @@ in map"
                        ;; the function that how to find the neighbors
                        ;; the start shoul be the lambda-list of this function
                        ;; it called with (funcall next-steps-fun map start)
+                       ;; and it will return the (cost (,@start [dir]))
                        next-steps-fun
-                       
-                       with-dir ;; if it is t, one slot visit with different dir will treat differently
+
+                       ;; if it is t, one slot visit with different dir will treat differently
+                       with-dir 
                        (sort-fun #'<) ;; sort fun for heap
                        (cannot #\#)   ;; the char that cannot visit
                      &allow-other-keys)
