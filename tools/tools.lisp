@@ -367,9 +367,9 @@ in map"
           for br = (aoc-map-beyond-the-range map c)
           when (or can-beyond-range (not br))
             if with-dir
-              collect (list c dir)
+              collect (list c dir) ;;((row col) dir)
           else 
-            collect c)))
+            collect c))) ;; (row col)
 
 (defun aoc-map-dijkstra-start-with-dir-p (start)
   (typep start '(cons (cons fixnum (cons fixnum null)) (cons * null))))
@@ -388,13 +388,15 @@ in map"
                      &key
                        ;; if end-id isn't nil, return immediately when
                        ;; reach the end-id. pure id, no direction
-                       end 
+                       end
+                       ;; the function that how to find the neighbors
+                       ;; the start shoul be the lambda-list of this function
+                       ;; it called with (funcall next-steps-fun map start)
+                       next-steps-fun
+                       
                        with-dir ;; if it is t, one slot visit with different dir will treat differently
-                       (next-steps #'aoc-map-around-coop) ;; the function that how to move
                        (sort-fun #'<) ;; sort fun for heap
-                       (dir 'hor-ver)
-                       (cannot #\#) ;; the char that cannot visit
-                       (can #\.) ;; the element that shows available to move
+                       (cannot #\#)   ;; the char that cannot visit
                      &allow-other-keys)
   "dijkstra for map"
   (if with-dir
@@ -404,23 +406,39 @@ in map"
   (let ((distance-table (make-hash-table :test 'equal))
         (visited (make-hash-set))
         ;; start either (0 row col dir) or (0 row col)
+        ;; and the (cdr start) should be the lambda-list for next-steps-fun
         (start (if with-dir (cons 0 (append (first start) (cdr start))) (cons 0 start))))
     (setf (gethash (cdr start) distance-table) 0)
-    (format t "start: ~a~%" start)
-    (do ((this start) ;; (cost row col [dir])
-         (next-round (make-instance 'cl-heap:binary-heap
-                                    :sort-fun #'<
-                                    :key #'first))
-         (this-to-start-value (gethash (cdr this) distance-table)
-                              (gethash (cdr this) distance-table)))
-        ((or (and end (subseq this 1 3)) ;; has end
-             (not this))
-         distance-table)
+    ;;(format t "start: ~a~%" start)
+    (do* ((this start) ;; (cost row col [dir])
+          (next-round (make-instance 'cl-heap:binary-heap
+                                     :sort-fun sort-fun
+                                     :key #'first))
+          (this-to-start-value (gethash (cdr this) distance-table)
+                               (gethash (cdr this) distance-table)))
+         ((or (not this)
+              ;; has end
+              (and end (equal end (subseq this 1 3))))
+          distance-table)
+      ;;(format t "this is ~a, heap is ~a~%" this (slot-value next-round 'cl-heap::data))
       (if (set-get visited (cdr this))
-          nil ;;:= todo
-          )
-      )
-    ))
+          nil
+          (loop with neighbors = (funcall next-steps-fun map (cdr this))
+                for (cost next) in neighbors
+                for next-coop = (if with-dir
+                                    (butlast next)
+                                    next)
+                unless (equal (get-aoc-map-ele map next-coop) cannot)
+                  unless (set-get visited next)
+                    do (if (or (not (gethash next distance-table))
+                               (> (gethash next distance-table)
+                                  (+ this-to-start-value cost)))
+                           (progn (setf (gethash next distance-table)
+                                        (+ this-to-start-value cost))
+                                  (cl-heap:add-to-heap next-round
+                                                       (cons (+ this-to-start-value cost) next))))))
+      (set-insert visited (cdr this))
+      (setf this (cl-heap:pop-heap next-round)))))
 
 (defstruct (aoc-map-segment (:conc-name amap-segment-))
   coops ;; list of all coops of this segment
@@ -641,18 +659,18 @@ try to walk all points"
                               :visited (cons start-id visited)))))
 
 ;; example from wiki
-(let ((g (make-graph :graph-type 'undirected)))
-  (insert-graph-node g 1 2 7)
-  (insert-graph-node g 1 6 14)
-  (insert-graph-node g 1 3 9)
-  (insert-graph-node g 2 3 10)
-  (insert-graph-node g 2 4 15)
-  (insert-graph-node g 3 6 2)
-  (insert-graph-node g 3 4 11)
-  (insert-graph-node g 6 5 9)
-  (insert-graph-node g 4 5 6)
-  ;;(get-all-nodes-of-id g 1)
-  (dijkstra g 1 :end-id 5))
+;; (let ((g (make-graph :graph-type 'undirected)))
+;;   (insert-graph-node g 1 2 7)
+;;   (insert-graph-node g 1 6 14)
+;;   (insert-graph-node g 1 3 9)
+;;   (insert-graph-node g 2 3 10)
+;;   (insert-graph-node g 2 4 15)
+;;   (insert-graph-node g 3 6 2)
+;;   (insert-graph-node g 3 4 11)
+;;   (insert-graph-node g 6 5 9)
+;;   (insert-graph-node g 4 5 6)
+;;   ;;(get-all-nodes-of-id g 1)
+;;   (dijkstra g 1 :end-id 5))
 
 
 ;;;;;;;;;;;;;;;
