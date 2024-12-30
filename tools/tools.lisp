@@ -707,33 +707,6 @@ try to walk all points"
     ))
 
 (defmacro lru (cache-syms func-declare)
-  "lru function macro. CANNOT use return-from inside yet"
-  (if (not (eq 'defun (car func-declare))) (error "only for function"))
-  (let ((table-name (gensym))
-        (shadow-func-name (gensym))
-        (cache-v (gensym)))
-    `(let ((,table-name (make-hash-table :test 'equal)))
-       (defun ,shadow-func-name ,@(cddr func-declare))
-       ,(let ((cut-pos 3))
-          (loop while
-                (cond ((stringp (nth cut-pos func-declare))
-                       (incf cut-pos)
-                       t)
-                      ((eq 'declare (car (nth cut-pos func-declare)))
-                       (incf cut-pos)
-                       t)
-                      (t nil)))
-          (append (subseq func-declare 0 cut-pos)
-                  (list `(let ((,cache-v (gethash (list ,@cache-syms) ,table-name)))
-                           (if ,cache-v (return-from ,(nth 1 func-declare) ,cache-v))
-                           (setf ,cache-v (apply #',shadow-func-name
-                                                 (list ,@(lambda-list-to-argument (nth 2 func-declare))))
-                                 (gethash (list ,@cache-syms) ,table-name) ,cache-v)
-                           ,cache-v)))
-          ))))
-
-(defmacro lru-2 (cache-syms func-declare)
-  "lru function macro. CANNOT use return-from inside yet"
   (if (not (eq 'defun (car func-declare))) (error "only for function"))
   (let ((table-name (gensym))
         (cache-v (gensym)))
