@@ -6,6 +6,7 @@
 (defun day3 (&optional (input *input*))
   (let ((all (loop for line in input
                    append (cl-ppcre:all-matches-as-strings "mul\\(\\d+,\\d+\\)" line))))
+    (format t "all length: ~a~%" (length all))
     (loop for a in all
           sum (str:match a
                 (("mul" "\\(" x "," y "\\)") (* (parse-integer x) (parse-integer y)))))))
@@ -13,7 +14,7 @@
 (defun day3-2 (&optional (input *input*))
   (let ((all (loop for line in input
                    append (cl-ppcre:all-matches-as-strings "(mul\\(\\d+,\\d+\\)|do\\(\\)|don\\'t\\(\\))" line))))
-
+    (format t "all length: ~a~%" (length all))
     (do* ((rest all (cdr rest))
           (this (car rest) (car rest))
           (flag t)
