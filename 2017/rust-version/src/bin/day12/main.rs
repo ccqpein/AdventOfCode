@@ -66,6 +66,11 @@ fn day12(inputs: &[String]) -> usize {
     visited.len()
 }
 
+fn day12_2(inputs: &[String]) -> usize {
+    let g = parse_input(inputs);
+    g.groups().len()
+}
+
 fn main() {
     let input = read_file_by_line("../inputs/day12.input");
     //let input = read_file_by_line("../inputs/day12_demo.input");
@@ -73,4 +78,5 @@ fn main() {
     //parse_line("2 <-> 0, 3, 4");
     //dbg!(parse_input(&vec!["2 <-> 0, 3, 4".to_string()]));
     dbg!(day12(&input));
+    dbg!(day12_2(&input));
 }

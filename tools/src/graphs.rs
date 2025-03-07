@@ -258,7 +258,54 @@ where
         self.graph.remove(id);
         Ok(())
     }
+
+    /// get the ID the neighbours
+    pub fn get_neighbours(&self, id: &ID) -> Option<impl IntoIterator<Item = &ID>> {
+        match self.get(id) {
+            Some(ns) => Some(ns.as_slice().iter().map(|n| n.id())),
+            None => None,
+        }
+    }
+
+    /// return id groups, those ids can visted from each other is a group
+    pub fn groups(&self) -> Vec<HashSet<&ID>> {
+        let mut all_ids = self.all_ids().into_iter().collect::<HashSet<_>>();
+        let mut groups = vec![];
+        let mut next_round = vec![];
+
+        loop {
+            // give the random start
+            match all_ids.iter().next() {
+                Some(x) => next_round.push(*x),
+                None => return groups,
+            }
+
+            let mut group = HashSet::new();
+            while !next_round.is_empty() {
+                let this = next_round.pop().unwrap();
+                if group.contains(this) {
+                    continue;
+                }
+
+                if let Some(ns) = self.get_neighbours(this) {
+                    next_round.append(&mut ns.into_iter().collect::<Vec<_>>());
+                }
+                group.insert(this);
+                all_ids.remove(this);
+            }
+
+            if group.is_empty() {
+                break;
+            } else {
+                groups.push(group)
+            }
+        }
+
+        groups
+    }
 }
+
+//struct<'a> GraphGroup<'a> {}
 
 /// Dijkstra instance
 pub struct Dijkstra {}
