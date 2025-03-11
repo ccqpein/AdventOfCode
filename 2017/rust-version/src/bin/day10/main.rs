@@ -56,6 +56,37 @@ fn day10(input: &str) -> i32 {
     l[0] * l[1]
 }
 
+fn day10_2(input: &str) -> String {
+    let mut a = input
+        .chars()
+        .map(|c| c.as_ascii().unwrap().to_u8() as i32)
+        .collect::<Vec<_>>();
+    a.append(&mut vec![17, 31, 73, 47, 23]);
+    dbg!(&a);
+
+    let mut l = (0..=255).collect::<Vec<_>>();
+    let mut start = 0;
+    let mut skip = 0;
+
+    for _ in 0..64 {
+        for i in &a {
+            start = knot_hash(&mut l, start, *i as usize, skip);
+            skip += 1;
+        }
+    }
+
+    let mut re = String::new();
+    for i in 0..16 {
+        re += sixteen_numbers_to_string(l.get(i * 16..i * 16 + 16).unwrap()).as_str()
+    }
+
+    re
+}
+
+fn sixteen_numbers_to_string(h: &[i32]) -> String {
+    format!("{:02x}", h.into_iter().fold(0, |init, n| init ^ n))
+}
+
 fn main() {
     let input = "187,254,0,81,169,219,1,190,19,102,255,56,46,32,2,216".to_string();
 
@@ -68,4 +99,10 @@ fn main() {
 
     //dbg!(day10(&input));
     //dbg!(day10("3,4,1,5"));
+
+    dbg!(day10_2("1,2,3"));
+    // dbg!(sixteen_numbers_to_string(&[
+    //     65, 27, 9, 1, 4, 3, 40, 50, 91, 7, 6, 0, 2, 5, 68, 22
+    // ]));
+    dbg!(day10_2(&input));
 }
