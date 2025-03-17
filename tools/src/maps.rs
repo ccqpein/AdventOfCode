@@ -1,5 +1,8 @@
 #![allow(dead_code, unused)]
-use std::fmt::{Debug, Display};
+use std::{
+    collections::HashSet,
+    fmt::{Debug, Display},
+};
 
 #[derive(Debug)]
 pub struct Map<T> {
@@ -307,6 +310,64 @@ impl<'a, T: Clone + Debug> Iterator for MapIterMut<'a, T> {
     }
 }
 
+#[derive(Debug)]
+pub struct Segment<'m, T: Clone> {
+    coops: HashSet<(usize, usize)>,
+    value: T,
+    map_inner: &'m Map<T>,
+}
+
+impl<'m, T: Clone + PartialEq + Eq> Segment<'m, T> {
+    pub fn gen_segments(m: &'m Map<T>) -> Vec<Segment<'m, T>> {
+        let mut result = vec![];
+        let mut segmented = HashSet::new();
+        let mut next = vec![];
+        let mut visited = HashSet::new(); // visited in segmenting
+        for r in 0..m.row_len() {
+            for c in 0..m.col_len() {
+                if segmented.get(&(r, c)).is_some() {
+                    continue;
+                }
+
+                next = vec![(r, c)]; //:= should I push or assign new?
+                let this_v = m.get((r, c)).unwrap();
+
+                loop {
+                    if next.is_empty() {
+                        break;
+                    }
+
+                    let this_coop = next.pop().unwrap();
+                    for (coop, v) in m.get_around_horiz(this_coop) {
+                        if v == this_v && !visited.contains(&coop) {
+                            next.push(coop);
+                        }
+                    }
+
+                    visited.insert(this_coop);
+                }
+
+                result.push(Segment {
+                    coops: visited.clone(),
+                    value: this_v.clone(),
+                    map_inner: m,
+                });
+
+                visited.iter().for_each(|vv| {
+                    segmented.insert(*vv);
+                });
+
+                visited.clear();
+            }
+        }
+        result
+    }
+
+    pub fn value(&self) -> &T {
+        &self.value
+    }
+}
+
 fn print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>())
 }
@@ -383,5 +444,42 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![((1, 2), 5), ((1, 3), 1), ((1, 4), 2)]
         );
+    }
+
+    #[test]
+    fn map_gen_segments_test() {
+        let tetscase = r"AAAA
+BBCD
+BBCC
+EEEC";
+
+        let m: Map<char> = tetscase
+            .lines()
+            .into_iter()
+            .map(|l| l.chars().collect::<Vec<_>>())
+            .collect::<Vec<Vec<char>>>()
+            .into();
+
+        dbg!(Segment::gen_segments(&m));
+
+        let tetscase = r"RRRRIICCFF
+RRRRIICCCF
+VVRRRCCFFF
+VVRCCCJFFF
+VVVVCJJCFE
+VVIVCCJJEE
+VVIIICJJEE
+MIIIIIJJEE
+MIIISIJEEE
+MMMISSJEEE";
+
+        let m: Map<char> = tetscase
+            .lines()
+            .into_iter()
+            .map(|l| l.chars().collect::<Vec<_>>())
+            .collect::<Vec<Vec<char>>>()
+            .into();
+
+        assert_eq!(11, Segment::gen_segments(&m).len());
     }
 }
