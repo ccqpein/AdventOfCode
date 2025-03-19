@@ -329,7 +329,8 @@ impl<'m, T: Clone + PartialEq + Eq> Segment<'m, T> {
                     continue;
                 }
 
-                next = vec![(r, c)]; //:= should I push or assign new?
+                next.clear();
+                next.push((r, c));
                 let this_v = m.get((r, c)).unwrap();
 
                 loop {

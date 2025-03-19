@@ -1,4 +1,5 @@
 #![feature(ascii_char)]
+use tools::*;
 
 fn knot_hash(l: &mut Vec<i32>, start: usize, len: usize, skip: usize) -> usize {
     //dbg!(start);
@@ -82,13 +83,38 @@ fn day14(input: &str) -> u32 {
     re
 }
 
+fn day14_2(input: &str) -> usize {
+    let mut lines = vec![];
+    for i in 0..128 {
+        let mut a = vec![];
+        for c in calculate_hash(&format!("{}-{}", input, i)).chars() {
+            a.append(&mut hex_char_to_binary(c).0.chars().collect());
+        }
+        lines.push(a);
+    }
+    //dbg!(&lines);
+    let m: Map<char> = lines.into();
+    let sgs = Segment::gen_segments(&m);
+    let mut count = 0;
+    for s in sgs {
+        if *s.value() == '1' {
+            count += 1;
+        }
+    }
+
+    count
+}
+
 fn main() {
-    let input = "jxqlasbh";
+    //let input = "jxqlasbh";
     //dbg!(calculate_hash("flqrgnkx-0"));
     //println!("{:x}", "d");
     //dbg!(hex_char_to_binary('d'));
     //dbg!(13_i32.count_ones());
     //dbg!(day14("flqrgnkx"));
 
-    dbg!(day14(input));
+    //dbg!(day14(input));
+    //let input = "flqrgnkx";
+    let input = "jxqlasbh";
+    dbg!(day14_2(input));
 }
