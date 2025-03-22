@@ -87,6 +87,38 @@ fn day16(input: &str) -> String {
     String::from_iter(re.into_iter())
 }
 
+fn day16_2(input: &str, limit: usize) -> String {
+    let mut re = "abcdefghijklmnop".chars().collect::<LinkedList<_>>();
+    let mut table = HashMap::new();
+    let ops = input.split(',').map(|w| parse_input(w)).collect::<Vec<_>>();
+
+    for ind in 1..=limit {
+        for op in &ops {
+            match op {
+                DanceOps::Spin(x) => re = spin(re, *x),
+                DanceOps::Exchange(a, b) => swap(&mut re, *a, *b),
+                DanceOps::Partner(a, b) => swap_p(&mut re, a.clone(), b.clone()),
+            }
+        }
+        if let Some(x) = table.get(&re) {
+            //dbg!(x);
+            //dbg!(ind);
+            let ii = limit % (ind - x);
+            //dbg!(ii);
+            re = table
+                .into_iter()
+                .find(|(_, store_ii)| *store_ii == ii)
+                .unwrap()
+                .0;
+            break;
+        } else {
+            table.insert(re.clone(), ind);
+        }
+    }
+
+    String::from_iter(re.into_iter())
+}
+
 fn main() {
     let input = vec!["s1,x3/43,pe/b"];
     let mut a = "abcde".chars().collect::<LinkedList<_>>();
@@ -101,5 +133,6 @@ fn main() {
     }
 
     let input = read_file_by_line("../inputs/day16.input");
-    dbg!(day16(&input[0]));
+    //dbg!(day16(&input[0]));
+    dbg!(day16_2(&input[0], 1000000000));
 }
