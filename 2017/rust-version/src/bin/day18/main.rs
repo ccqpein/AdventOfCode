@@ -31,15 +31,15 @@ fn day18(inputs: &[String]) {
         let Some((a, b, c)) = parsed_input.get(ind as usize) else {
             break;
         };
-
-        println!("{a} {b} {:?} => {:?}", c, memory.get(&"a".to_string()));
+        println!("{:?}", memory);
+        println!("{a} {b} {:?}", c);
 
         match (a.as_str(), b.as_str(), c.as_ref().map(|v| v.as_str())) {
             ("snd", _, None) => {
                 last = *memory.entry(b).or_insert(0);
             }
             ("set", _, _) => {
-                let digt = match c.as_ref().unwrap().parse::<i32>() {
+                let digt = match c.as_ref().unwrap().parse::<i64>() {
                     Ok(d) => d,
                     Err(_) => *memory.entry(&c.as_ref().unwrap()).or_insert(0),
                 };
@@ -47,26 +47,41 @@ fn day18(inputs: &[String]) {
                 *memory.entry(b).or_insert(0) = digt
             }
             ("add", _, _) => {
-                let digt = match c.as_ref().unwrap().parse::<i32>() {
+                let digt = match c.as_ref().unwrap().parse::<i64>() {
                     Ok(d) => d,
                     Err(_) => *memory.entry(&c.as_ref().unwrap()).or_insert(0),
                 };
+
+                // match memory.get_mut(b) {
+                //     Some(bb) => *bb += digt,
+                //     None => (),
+                // }
 
                 *memory.entry(b).or_insert(0) += digt
             }
             ("mul", _, _) => {
-                let digt = match c.as_ref().unwrap().parse::<i32>() {
+                let digt = match c.as_ref().unwrap().parse::<i64>() {
                     Ok(d) => d,
                     Err(_) => *memory.entry(&c.as_ref().unwrap()).or_insert(0),
                 };
 
+                // match memory.get_mut(b) {
+                //     Some(bb) => *bb *= digt,
+                //     None => (),
+                // }
+
                 *memory.entry(b).or_insert(0) *= digt
             }
             ("mod", _, _) => {
-                let digt = match c.as_ref().unwrap().parse::<i32>() {
+                let digt = match c.as_ref().unwrap().parse::<i64>() {
                     Ok(d) => d,
                     Err(_) => *memory.entry(&c.as_ref().unwrap()).or_insert(0),
                 };
+
+                // match memory.get_mut(b) {
+                //     Some(bb) => *bb %= digt,
+                //     None => (),
+                // }
 
                 *memory.entry(b).or_insert(0) %= digt;
             }
@@ -77,17 +92,33 @@ fn day18(inputs: &[String]) {
                 }
             }
             ("jgz", _, _) => {
-                let en = memory.entry(b).or_insert(0);
-                if *en > 0 {
-                    ind += c.as_ref().unwrap().parse::<i32>().unwrap();
+                // match memory.get_mut(b) {
+                //     Some(bb) => {
+                //         if *bb > 0 {
+                //             ind += c.as_ref().unwrap().parse::<i64>().unwrap();
+                //             continue;
+                //         }
+                //     }
+                //     None => (),
+                // }
+
+                let digt = match b.parse::<i64>() {
+                    Ok(d) => d,
+                    Err(_) => *memory.entry(b).or_insert(0),
+                };
+
+                //let en = memory.entry(b).or_insert(0);
+                if digt > 0 {
+                    ind += c.as_ref().unwrap().parse::<i64>().unwrap();
                     continue;
                 }
             }
             _ => unreachable!(),
         }
+
         ind += 1
     }
-
+    println!("table: {:?}", memory);
     println!("last: {last}")
 }
 
