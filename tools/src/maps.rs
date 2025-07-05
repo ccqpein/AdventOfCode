@@ -364,6 +364,10 @@ impl<'m, T: Clone + PartialEq + Eq> Segment<'m, T> {
         result
     }
 
+    pub fn all_coops(&self) -> &HashSet<(usize, usize)> {
+        &self.coops
+    }
+
     pub fn value(&self) -> &T {
         &self.value
     }
