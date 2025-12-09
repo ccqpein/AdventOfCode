@@ -84,16 +84,16 @@
             do (loop for (a b) in (gethash dd m)
                      unless start
                        do (setf start a)
-                     do (insert-graph-node g a b d)
+                     do (insert-graph-node g a b dd)
                         (let ((visited (make-hash-table :test #'equal)))
                           (rec-visited g start visited)
                           (if (= len (hash-table-count visited))
                               (return-from day8-2 (* (first a) (first b))))))))))
 
-;; (multiple-value-bind (d m len)
-;;     (parse-input *input-demo*)
-;;   (loop for dd in d
-;;         do (format t "~a~%" (gethash dd m))))
+(multiple-value-bind (d m len)
+    (parse-input *input-demo*)
+  (loop for dd in d
+        do (format t "~a~%" (gethash dd m))))
 
 ;; (multiple-value-bind (d m len)
 ;;     (parse-input *input-demo*)
@@ -102,3 +102,20 @@
 ;;     (format t "~a" (get-all-nodes g))
 ;;     (rec-count g '(162 817 812) visited)
 ;;     (alexandria:hash-table-plist visited)))
+
+;; use union find algorithm
+(defun day8-2-new (input)
+  (multiple-value-bind (d m len)
+      (parse-input input)
+    (let ((g (make-graph :graph-type 'undirected :union-find t)))
+      (loop for dd in d
+            do (loop for (a b) in (gethash dd m)
+                     do (insert-graph-node g a b dd)                        
+                        (mapcar (lambda (n) (dsu-find g (first n))) (get-all-nodes g))
+                     when (and (= len (length (get-all-nodes g)))
+                               (all-equal-p (alexandria:hash-table-values (agraph-parents-table g))))
+                       ;; do (format t "get-all-nodes: ~a~%~a~%~a~%"
+                       ;;            (get-all-nodes g)
+                       ;;            (length (get-all-nodes g))
+                       ;;            (alexandria:hash-table-values (agraph-parents-table g)))
+                       do (return-from day8-2-new (* (first a) (first b))))))))

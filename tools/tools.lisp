@@ -147,6 +147,14 @@ list of all result: 11 +/* 6 +/* 16 +/* 20"
                                     collect (funcall op previous-v v))))
         finally (return buckets)))
 
+(defun all-equal-p (lst)
+  "Checks if all elements in a list are equal using EQL."
+  (cond
+    ((null lst) t) ; An empty list has all elements "equal"
+    ((null (rest lst)) t) ; A list with one element has all elements equal
+    (t (let ((first-element (first lst)))
+         (every #'(lambda (x) (eql x first-element)) (rest lst))))))
+
 ;;;;;;;;;;;;;;;;
 ;; some str helper function below
 ;;;;;;;;;;;;;;;;
@@ -543,12 +551,18 @@ Like: https://adventofcode.com/2024/day/12"
   graph-type 
 
   ;; id -> (list (list other-id weight) *)
-  table)
+  table
 
-(defun make-graph (&key (graph-type 'directed))
-  (let ((table (make-hash-table :test 'equal)))
-    (make-aoc-graph :graph-type graph-type
-                    :table table)))
+  ;; parents table for union-find
+  parents-table)
+
+(defun make-graph (&key (graph-type 'directed) union-find)
+  (if (and union-find (eq graph-type 'directed))
+      (error "union-find only for undirected"))
+  (make-aoc-graph :graph-type graph-type
+                  :table (make-hash-table :test 'equal)
+                  :parents-table (if union-find
+                                     (make-hash-table :test 'equal))))
 
 (defun insert-graph-node (graph id other-id weight)
   "id --weight-> other-id. other-id isn't ensure unique"
@@ -562,12 +576,23 @@ Like: https://adventofcode.com/2024/day/12"
          (progn
            (unless (gethash id (agraph-table graph))
              (setf (gethash id (agraph-table graph))
-                   (make-hash-table :test 'equal)))
+                   (make-hash-table :test 'equal))
+             ;; add to the parent table
+             (when (agraph-parents-table graph)
+               (setf (gethash id (agraph-parents-table graph)) id)))
            (unless (gethash other-id (agraph-table graph))
              (setf (gethash other-id (agraph-table graph))
-                   (make-hash-table :test 'equal)))
+                   (make-hash-table :test 'equal))
+             ;; add to the parent table
+             (when (agraph-parents-table graph)
+               (setf (gethash other-id (agraph-parents-table graph)) other-id)))
+           
            (setf (gethash other-id (gethash id (agraph-table graph))) weight)
-           (setf (gethash id (gethash other-id (agraph-table graph))) weight)))
+           (setf (gethash id (gethash other-id (agraph-table graph))) weight)
+
+           ;; dsu union operation
+           (when (agraph-parents-table graph)
+             (return-from insert-graph-node (dsu-union graph id other-id)))))
         ))
 
 (defun aoc-map-to-graph (m &key (dir 'around))
@@ -658,6 +683,22 @@ try to walk all points"
             unless (member n visited :test 'equal)
               append (find-id graph n end-id
                               :visited (cons start-id visited)))))
+
+(defun dsu-find (g id)
+  "the find part of algorithm union find"
+  (let ((parent-table (agraph-parents-table g)))
+    (if (not (equal (gethash id parent-table)
+                    id))
+        (setf (gethash id parent-table) (dsu-find g (gethash id parent-table))))
+    (gethash id parent-table)))
+
+(defun dsu-union (g id other-id)
+  "the union part of algorithm union find"
+  (let ((x (dsu-find g id))
+        (y (dsu-find g other-id)))
+    (if (not (equal x y))
+        (setf (gethash y (agraph-parents-table g)) x)
+        nil)))
 
 ;; example from wiki
 ;; (let ((g (make-graph :graph-type 'undirected)))
