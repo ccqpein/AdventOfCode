@@ -9,3 +9,7 @@ tools = { path = "../../tools" }
 itertools = "0"
 rayon = "1"
 cl-format = "0"
+tokio = { version = "1", features = ["full"] }
+arrayvec = "0.7.6"
+microlp = "0.2.11"
+atoi = "2.0.0"
